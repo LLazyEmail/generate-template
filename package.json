@@ -1,5 +1,5 @@
 {
-  "name": "generate-template",
+  "name": "@llazyemail/generate-template",
   "version": "0.1.0",
   "description": "Configurable engine for rendering named email templates to HTML.",
   "author": "Arthur Tkachenko",
@@ -41,6 +41,7 @@
     "vitest": "^5.0.0"
   },
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
   "keywords": [
@@ -49,6 +50,10 @@
     "generator",
     "typescript"
   ],
+  "homepage": "https://github.com/LLazyEmail/generate-template#readme",
+  "bugs": {
+    "url": "https://github.com/LLazyEmail/generate-template/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LLazyEmail/generate-template.git"

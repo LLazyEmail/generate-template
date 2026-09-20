@@ -1,6 +1,7 @@
-# generate-template
+# @llazyemail/generate-template
 
-Small engine for turning named email templates into HTML.
+Standalone engine for turning named email templates into HTML.
+Published to **GitHub Packages** as `@llazyemail/generate-template`.
 
 Requires **Node.js >= 20**.
 
@@ -24,10 +25,19 @@ Render order:
 
 `CATALOG` and `SAMPLE_PAYLOADS` are only a default registry copied from the source project. They are not required to use the module.
 
-## Install
+## Install from GitHub Packages
+
+GitHub Packages is a scoped registry. Add this to the consuming project `.npmrc` (see `.npmrc.example`):
+
+```ini
+@llazyemail:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+`GITHUB_TOKEN` must be a GitHub PAT with `read:packages` (and SSO authorized for the `LLazyEmail` org if required). Then:
 
 ```bash
-npm install generate-template
+npm install @llazyemail/generate-template
 ```
 
 ## Library
@@ -35,7 +45,7 @@ npm install generate-template
 Bind templates from the consuming project. No files inside this package are required:
 
 ```ts
-import { createGenerator } from 'generate-template';
+import { createGenerator } from '@llazyemail/generate-template';
 import { WelcomeEmail } from './emails/welcome';
 
 const generate = createGenerator({
@@ -57,7 +67,7 @@ const file = generate.write('welcome', { out: 'generated/welcome.html' });
 Same engine, old layout, when you still have the original project on disk:
 
 ```ts
-import { createGenerator, CATALOG, SAMPLE_PAYLOADS } from 'generate-template';
+import { createGenerator, CATALOG, SAMPLE_PAYLOADS } from '@llazyemail/generate-template';
 
 const generate = createGenerator({
   root: process.cwd(),
@@ -68,14 +78,14 @@ const generate = createGenerator({
 });
 ```
 
-`root` / `templatesDir` / `dataDir` resolve against the consuming project, not against `node_modules/generate-template`.
+`root` / `templatesDir` / `dataDir` resolve against the consuming project, not against `node_modules/@llazyemail/generate-template`.
 
 ## CLI
 
 ```bash
-npx generate-template --list
-npx generate-template --template=welcome --out=generated/welcome.html
-npx generate-template --all --out=generated
+npx @llazyemail/generate-template --list
+npx @llazyemail/generate-template --template=welcome --out=generated/welcome.html
+npx @llazyemail/generate-template --all --out=generated
 ```
 
 The CLI uses `createGenerator()` with `process.cwd()`.
@@ -88,10 +98,15 @@ npm run typecheck # tsc --noEmit
 npm run build     # tsup (CJS + ESM + types + CLI)
 ```
 
-## Publish
+## Publish (maintainers)
 
-CI runs typecheck, build, and tests on push and pull requests to `main`.
+1. Bump `version` in `package.json`.
+2. Create a GitHub Release on `main` (tag `v0.1.0`, etc.).
+3. `.github/workflows/npm-publish.yml` builds, tests, and runs `npm publish` against `https://npm.pkg.github.com` using `GITHUB_TOKEN`.
 
-A GitHub Release on `main` runs `.github/workflows/npm-publish.yml` (`npm publish --access public --provenance`). Use workflow_dispatch with `dry_run` to pack without publishing.
+Use **Actions → Publish to GitHub Packages → Run workflow** with `dry_run` to pack without publishing.
 
-Configure npm Trusted Publishing for this GitHub repo, or set `NODE_AUTH_TOKEN` as a repository secret if you publish with a classic token.
+The package name **must** stay scoped as `@llazyemail/...` — GitHub Packages only accepts names that match the owner.
+
+After the first successful publish, the package appears under the repo **Packages** tab:
+https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template

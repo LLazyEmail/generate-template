@@ -1,6 +1,6 @@
-# Publish generate-template to npm when a GitHub Release is published.
+# Publish @llazyemail/generate-template to GitHub Packages when a Release is published.
 
-name: Publish to npm
+name: Publish to GitHub Packages
 
 on:
   release:
@@ -14,7 +14,7 @@ on:
         default: false
 
 concurrency:
-  group: npm-publish
+  group: github-packages-publish
   cancel-in-progress: false
 
 jobs:
@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      packages: write
       id-token: write
     steps:
       - uses: actions/checkout@v7
@@ -32,12 +33,15 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org/
+          registry-url: https://npm.pkg.github.com
+          scope: '@llazyemail'
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
       - run: npm pack --dry-run
-      - name: Publish to npm
+      - name: Publish to GitHub Packages
         if: ${{ github.event_name == 'release' || inputs.dry_run != true }}
-        run: npm publish --access public --provenance
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
