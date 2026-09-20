@@ -1,7 +1,7 @@
 {
   "name": "generate-template",
   "version": "0.1.0",
-  "description": "TypeScript helper for generating email templates.",
+  "description": "Configurable engine for rendering named email templates to HTML.",
   "author": "Arthur Tkachenko",
   "license": "MIT",
   "private": false,

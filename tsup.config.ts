@@ -16,7 +16,7 @@ export default defineConfig([
   },
   {
     entry: {
-      cli: 'src/generate-template.ts',
+      cli: 'src/cli.ts',
     },
     format: ['esm'],
     dts: false,
