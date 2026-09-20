@@ -1,6 +1,8 @@
 # generate-template
 
-TypeScript helper and CLI for generating email templates.
+Small engine for turning named email templates into HTML.
+
+The original script assumed `src/templates` inside one app. This package does not. You pass a catalog, payloads, and either a `render` function or a file on *your* disk.
 
 Requires **Node.js >= 20**.
 
@@ -12,22 +14,43 @@ npm install generate-template
 
 ## Library
 
-```ts
-import {
-  generateTemplate,
-  CATALOG,
-  loadPayload,
-  findEntry,
-} from 'generate-template';
+Bind templates from the consuming project:
 
-const html = generateTemplate({
-  title: 'Weekly Digest',
-  body: '<p>Hello</p>',
+```ts
+import { createGenerator } from 'generate-template';
+import { WelcomeEmail } from './emails/welcome';
+
+const generate = createGenerator({
+  catalog: [
+    {
+      ids: ['welcome', 'WelcomeEmail'],
+      render: WelcomeEmail,
+    },
+  ],
+  samplePayloads: {
+    welcome: { name: 'Alex' },
+  },
 });
 
-const entry = findEntry('welcome');
-const payload = loadPayload('WelcomeEmail');
+const html = generate.render('welcome');
+const file = generate.write('welcome', { out: 'generated/welcome.html' });
 ```
+
+Point at another repo's files (the old layout):
+
+```ts
+import { createGenerator, CATALOG, SAMPLE_PAYLOADS } from 'generate-template';
+
+const generate = createGenerator({
+  root: process.cwd(),
+  templatesDir: 'src/templates',
+  dataDir: 'src/data',
+  catalog: CATALOG,
+  samplePayloads: SAMPLE_PAYLOADS,
+});
+```
+
+`CATALOG` and `SAMPLE_PAYLOADS` are the default registry copied from the source project. They are optional examples, not required to use the module.
 
 ## CLI
 
@@ -37,20 +60,8 @@ npx generate-template --template=welcome --out=generated/welcome.html
 npx generate-template --all --out=generated
 ```
 
-Catalog IDs live in `src/template-catalog.ts`. Rendering a catalog template still needs the matching file under `src/templates`.
-
-## Scripts
-
-```bash
-npm test          # vitest
-npm run typecheck # tsc --noEmit
-npm run build     # tsup (CJS + ESM + types + CLI)
-```
+The CLI uses `createGenerator()` with `process.cwd()`.
 
 ## Publish
 
-CI runs typecheck, build, and tests on push and pull requests to `main`.
-
-Creating a GitHub Release on `main` runs `.github/workflows/npm-publish.yml`, which publishes to npm with provenance. Use workflow_dispatch with `dry_run` to pack without publishing.
-
-Configure npm Trusted Publishing for this GitHub repo, or set `NODE_AUTH_TOKEN` as a repository secret if you publish with a classic token.
+A GitHub Release on `main` runs `.github/workflows/npm-publish.yml` (`npm publish --access public --provenance`).
