@@ -5,16 +5,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CATALOG, SAMPLE_PAYLOADS, type TemplateCatalogEntry } from './template-catalog.ts';
+import { CATALOG, SAMPLE_PAYLOADS, type TemplateCatalogEntry } from './template-catalog';
 
 const requireData = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TEMPLATES_DIR = path.join(ROOT, 'src', 'templates');
-const DATA_DIR = path.join(ROOT, 'src', 'data');
-const DEFAULT_OUT_DIR = 'generated';
+export const TEMPLATES_DIR = path.join(ROOT, 'src', 'templates');
+export const DATA_DIR = path.join(ROOT, 'src', 'data');
+export const DEFAULT_OUT_DIR = 'generated';
 const SKIP_FILES = new Set(['index.js', 'index2.js', 'registry.ts', 'registry.js']);
 
-interface CliArgs {
+export interface CliArgs {
   all?: boolean;
   list?: boolean;
   template?: string;
@@ -22,7 +22,7 @@ interface CliArgs {
   out?: string;
 }
 
-function parseArgs(argv: string[]): CliArgs {
+export function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
   argv.forEach((arg) => {
     if (arg === '--all') {
@@ -42,7 +42,8 @@ function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-function listTemplateFiles(): string[] {
+export function listTemplateFiles(): string[] {
+  if (!fs.existsSync(TEMPLATES_DIR)) return [];
   return fs
     .readdirSync(TEMPLATES_DIR)
     .filter((name) => {
@@ -53,12 +54,12 @@ function listTemplateFiles(): string[] {
     .sort();
 }
 
-function findEntry(templateId: string): TemplateCatalogEntry | undefined {
+export function findEntry(templateId: string): TemplateCatalogEntry | undefined {
   const needle = String(templateId).toLowerCase();
   return CATALOG.find((entry) => entry.ids.some((id) => id.toLowerCase() === needle));
 }
 
-function slugFromId(templateId: string): string {
+export function slugFromId(templateId: string): string {
   const entry = findEntry(templateId);
   return (entry ? entry.ids[0] : String(templateId))
     .replace(/Email$/, '')
@@ -66,7 +67,7 @@ function slugFromId(templateId: string): string {
     .toLowerCase();
 }
 
-function loadPayload(templateId: string, dataPath?: string): unknown {
+export function loadPayload(templateId: string, dataPath?: string): unknown {
   if (dataPath) return requireData(path.resolve(process.cwd(), dataPath));
   if (SAMPLE_PAYLOADS[templateId]) return SAMPLE_PAYLOADS[templateId];
   const slugs = [templateId, slugFromId(templateId)];
@@ -74,42 +75,36 @@ function loadPayload(templateId: string, dataPath?: string): unknown {
     const candidate = path.join(DATA_DIR, `${slug}.data.js`);
     if (fs.existsSync(candidate)) return requireData(candidate);
   }
-  throw new Error(`No payload for "${templateId}". Pass --data=path or add src/data/${slugFromId(templateId)}.data.js`);
+  throw new Error(
+    `No payload for "${templateId}". Pass --data=path or add src/data/${slugFromId(templateId)}.data.js`
+  );
 }
 
-function writeHtml(outPath: string, html: string): string {
+export function writeHtml(outPath: string, html: string): string {
   const resolvedOutPath = path.resolve(process.cwd(), outPath);
   fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
   fs.writeFileSync(resolvedOutPath, html, 'utf8');
   return resolvedOutPath;
 }
 
-function serializePayload(payload: unknown): string {
-  return JSON.stringify(payload, (_key, value) =>
-    value instanceof Date ? { __date: value.toISOString() } : value
-  );
+export function serializePayload(payload: unknown): string {
+  return JSON.stringify(replaceDates(payload));
 }
 
-function runStripTypes(source: string): string {
-  const tmpFile = path.join(os.tmpdir(), `generate-template-${process.pid}-${Date.now()}.mts`);
-  fs.writeFileSync(tmpFile, source, 'utf8');
-  try {
-    const result = spawnSync(
-      process.execPath,
-      ['--experimental-strip-types', '--no-warnings', tmpFile],
-      { encoding: 'utf8', cwd: ROOT, maxBuffer: 10 * 1024 * 1024 }
-    );
-    if (result.status !== 0) {
-      const err = (result.stderr || result.stdout || '').trim();
-      throw new Error(err || `node exited ${result.status}`);
+function replaceDates(value: unknown): unknown {
+  if (value instanceof Date) return { __date: value.toISOString() };
+  if (Array.isArray(value)) return value.map(replaceDates);
+  if (value && typeof value === 'object') {
+    const next: Record<string, unknown> = {};
+    for (const [key, current] of Object.entries(value as Record<string, unknown>)) {
+      next[key] = replaceDates(current);
     }
-    return result.stdout;
-  } finally {
-    fs.rmSync(tmpFile, { force: true });
+    return next;
   }
+  return value;
 }
 
-function reviveDates(value: unknown): unknown {
+export function reviveDates(value: unknown): unknown {
   if (value instanceof Date) return value;
   if (value && typeof value === 'object' && '__date' in value && typeof (value as { __date?: unknown }).__date === 'string') {
     return new Date((value as { __date: string }).__date);
@@ -123,14 +118,19 @@ function reviveDates(value: unknown): unknown {
     const next: Record<string, unknown> = {};
     Object.keys(value as Record<string, unknown>).forEach((key) => {
       const current = (value as Record<string, unknown>)[key];
-      next[key] = key === 'signupDate' ? new Date(current as string | Date) : reviveDates(current);
+      if (key === 'signupDate') {
+        const revived = reviveDates(current);
+        next[key] = revived instanceof Date ? revived : new Date(current as string | Date);
+        return;
+      }
+      next[key] = reviveDates(current);
     });
     return next;
   }
   return value;
 }
 
-function renderOne(templateId: string, payload: unknown): string {
+export function renderOne(templateId: string, payload: unknown): string {
   const entry = findEntry(templateId);
   if (!entry) {
     throw new Error(`Unknown template id: "${templateId}". Available: ${CATALOG.flatMap((item) => item.ids).join(', ')}`);
@@ -170,8 +170,27 @@ process.stdout.write(html);
   }
 }
 
-function main(): void {
-  const args = parseArgs(process.argv.slice(2));
+function runStripTypes(source: string): string {
+  const tmpFile = path.join(os.tmpdir(), `generate-template-${process.pid}-${Date.now()}.mts`);
+  fs.writeFileSync(tmpFile, source, 'utf8');
+  try {
+    const result = spawnSync(
+      process.execPath,
+      ['--experimental-strip-types', '--no-warnings', tmpFile],
+      { encoding: 'utf8', cwd: ROOT, maxBuffer: 10 * 1024 * 1024 }
+    );
+    if (result.status !== 0) {
+      const err = (result.stderr || result.stdout || '').trim();
+      throw new Error(err || `node exited ${result.status}`);
+    }
+    return result.stdout;
+  } finally {
+    fs.rmSync(tmpFile, { force: true });
+  }
+}
+
+export function main(argv = process.argv.slice(2)): void {
+  const args = parseArgs(argv);
   const templateFiles = listTemplateFiles();
   if (args.list) {
     console.log('Files in src/templates:');
@@ -201,4 +220,10 @@ function main(): void {
   }
 }
 
-main();
+const thisFile = fileURLToPath(import.meta.url);
+const invokedAsCli =
+  typeof process.argv[1] === 'string' && path.resolve(process.argv[1]) === thisFile;
+
+if (invokedAsCli) {
+  main();
+}
