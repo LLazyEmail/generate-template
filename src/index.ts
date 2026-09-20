@@ -34,3 +34,24 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+export {
+  CATALOG,
+  SAMPLE_PAYLOADS,
+  type TemplateCatalogEntry,
+} from './template-catalog';
+
+export {
+  DEFAULT_OUT_DIR,
+  findEntry,
+  listTemplateFiles,
+  loadPayload,
+  main,
+  parseArgs,
+  renderOne,
+  reviveDates,
+  serializePayload,
+  slugFromId,
+  writeHtml,
+  type CliArgs,
+} from './generate-template';
