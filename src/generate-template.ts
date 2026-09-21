@@ -4,8 +4,7 @@
  */
 import { createGenerator, DEFAULT_OUT_DIR, TemplateGenerator } from './generator';
 import { findEntry as findEntryIn, slugFromId as slugIn } from './resolve';
-import { loadPayload as loadPayloadIn, reviveDates, serializePayload } from './payload';
-import { renderEntry } from './render';
+import { reviveDates, serializePayload } from './payload';
 import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
 import { main as runCli, parseArgs } from './cli';
 import type { CliArgs, TemplateCatalogEntry } from './types';
@@ -30,28 +29,16 @@ export function listTemplateFiles(): string[] {
   return defaultGenerator.listTemplateFiles();
 }
 
-export function loadPayload(templateId: string, dataPath?: string): unknown {
-  return loadPayloadIn({
-    templateId,
-    dataPath,
-    catalog: CATALOG,
-    samplePayloads: SAMPLE_PAYLOADS,
-    dataDir: defaultGenerator.dataDir,
-  });
+export async function loadPayload(templateId: string, dataPath?: string): Promise<unknown> {
+  return await defaultGenerator.loadPayload(templateId, dataPath);
 }
 
-export function writeHtml(outPath: string, html: string): string {
-  return defaultGenerator.writeHtml(outPath, html);
+export async function writeHtml(outPath: string, html: string): Promise<string> {
+  return await defaultGenerator.writeHtml(outPath, html);
 }
 
-export function renderOne(templateId: string, payload: unknown): string {
-  return renderEntry({
-    templateId,
-    payload,
-    catalog: CATALOG,
-    templatesDir: defaultGenerator.templatesDir,
-    root: defaultGenerator.root,
-  });
+export async function renderOne(templateId: string, payload: unknown): Promise<string> {
+  return await defaultGenerator.render(templateId, { payload });
 }
 
 export function main(argv = process.argv.slice(2)): void {
