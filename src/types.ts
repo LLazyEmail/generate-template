@@ -1,6 +1,6 @@
 export type TemplateRenderer =
-  | ((payload: unknown) => string)
-  | { render: (payload: unknown) => string };
+  | ((payload: unknown) => string | Promise<string>)
+  | { render: (payload: unknown) => string | Promise<string> };
 
 export interface TemplateCatalogEntry {
   ids: string[];
