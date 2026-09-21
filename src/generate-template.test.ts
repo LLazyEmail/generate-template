@@ -59,25 +59,27 @@ describe('catalog lookup', () => {
 });
 
 describe('payloads', () => {
-  it('loads built-in sample payloads for every catalog id', () => {
+  it('loads built-in sample payloads for every catalog id', async () => {
     for (const entry of CATALOG) {
       for (const id of entry.ids) {
-        expect(loadPayload(id)).toBe(SAMPLE_PAYLOADS[id]);
+        const payload = await loadPayload(id);
+        expect(payload).toBe(SAMPLE_PAYLOADS[id]);
       }
     }
   });
 
-  it('loads a JSON payload from --data', () => {
+  it('loads a JSON payload from --data', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'generate-template-data-'));
     tempDirs.push(dir);
     const dataPath = path.join(dir, 'custom.json');
     fs.writeFileSync(dataPath, JSON.stringify({ name: 'Pat' }));
 
-    expect(loadPayload('welcome', dataPath)).toEqual({ name: 'Pat' });
+    const payload = await loadPayload('welcome', dataPath);
+    expect(payload).toEqual({ name: 'Pat' });
   });
 
-  it('throws when no sample or data file exists', () => {
-    expect(() => loadPayload('missing-template')).toThrow(/No payload for "missing-template"/);
+  it('throws when no sample or data file exists', async () => {
+    await expect(loadPayload('missing-template')).rejects.toThrow(/No payload for "missing-template"/);
   });
 });
 
@@ -106,19 +108,19 @@ describe('render / files', () => {
     expect(listTemplateFiles()).toEqual([]);
   });
 
-  it('rejects unknown template ids before touching disk', () => {
-    expect(() => renderOne('nope', {})).toThrow(/Unknown template id/);
+  it('rejects unknown template ids before touching disk', async () => {
+    await expect(renderOne('nope', {})).rejects.toThrow(/Unknown template id/);
   });
 
-  it('rejects catalog entries whose template file is missing', () => {
-    expect(() => renderOne('welcome', SAMPLE_PAYLOADS.WelcomeEmail)).toThrow(/Template file missing/);
+  it('rejects catalog entries whose template file is missing', async () => {
+    await expect(renderOne('welcome', SAMPLE_PAYLOADS.WelcomeEmail)).rejects.toThrow(/Template file missing/);
   });
 
-  it('writes html under the resolved output path', () => {
+  it('writes html under the resolved output path', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'generate-template-out-'));
     tempDirs.push(dir);
     const outPath = path.join(dir, DEFAULT_OUT_DIR, 'welcome.html');
-    const written = writeHtml(outPath, '<html>ok</html>');
+    const written = await writeHtml(outPath, '<html>ok</html>');
 
     expect(written).toBe(path.resolve(outPath));
     expect(fs.readFileSync(written, 'utf8')).toBe('<html>ok</html>');
