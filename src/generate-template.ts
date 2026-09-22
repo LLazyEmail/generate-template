@@ -8,26 +8,13 @@
  * DEPRECATED: This compatibility layer is provided for migration purposes.
  * New code should use createGenerator() directly with custom configuration.
  */
-import { createGenerator, DEFAULT_OUT_DIR, TemplateGenerator } from './generator';
+import { createGenerator, DEFAULT_OUT_DIR, TemplateGenerator, getDefaultGenerator } from './generator';
 import { findEntry as findEntryIn, slugFromId as slugIn } from './resolve';
 import { loadPayload as loadPayloadIn, reviveDates, serializePayload } from './payload';
 import { renderEntry } from './render';
 import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
 import { main as runCli, parseArgs } from './cli';
 import type { CliArgs, TemplateCatalogEntry } from './types';
-
-// Lazy initialization to avoid issues with missing directories during import
-let _defaultGenerator: TemplateGenerator | null = null;
-
-function getDefaultGenerator(): TemplateGenerator {
-  if (!_defaultGenerator) {
-    _defaultGenerator = createGenerator({
-      catalog: CATALOG,
-      samplePayloads: SAMPLE_PAYLOADS,
-    });
-  }
-  return _defaultGenerator;
-}
 
 export { DEFAULT_OUT_DIR, parseArgs, reviveDates, serializePayload };
 export type { CliArgs };

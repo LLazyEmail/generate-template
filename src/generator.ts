@@ -108,3 +108,18 @@ export class TemplateGenerator {
 export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {
   return new TemplateGenerator(config);
 }
+
+// Lazy initialization for default generator instance
+// This is used by the compatibility layer to avoid issues with missing directories during import
+let _defaultGenerator: TemplateGenerator | null = null;
+
+export function getDefaultGenerator(): TemplateGenerator {
+  if (!_defaultGenerator) {
+    _defaultGenerator = createGenerator();
+  }
+  return _defaultGenerator;
+}
+
+export function resetDefaultGenerator(): void {
+  _defaultGenerator = null;
+}
