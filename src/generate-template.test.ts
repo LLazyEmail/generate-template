@@ -9,6 +9,14 @@ import { findEntry, slugFromId, availableIds } from './resolve';
 import { loadPayload as loadPayloadDirect } from './payload';
 import type { TemplateCatalogEntry } from './types';
 
+// Helper function for HTML writing in tests
+function writeHtml(outPath: string, html: string): string {
+  const resolvedOutPath = path.resolve(process.cwd(), outPath);
+  fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
+  fs.writeFileSync(resolvedOutPath, html, 'utf8');
+  return resolvedOutPath;
+}
+
 const tempDirs: string[] = [];
 
 afterEach(() => {
@@ -43,13 +51,13 @@ describe('catalog lookup', () => {
       },
     ];
     
-    expect(findEntry('password-reset', testCatalog)?.exportName).toBe('passwordReset');
-    expect(findEntry('PasswordResetEmail', testCatalog)?.file).toBe('password-reset.definition.ts');
-    expect(findEntry('WELCOME', testCatalog)?.ids).toContain('password-reset');
+    expect(findEntry(testCatalog, 'password-reset')?.exportName).toBe('passwordReset');
+    expect(findEntry(testCatalog, 'PasswordResetEmail')?.file).toBe('password-reset.definition.ts');
+    expect(findEntry(testCatalog, 'WELCOME')?.ids).toContain('password-reset');
   });
 
   it('returns undefined for unknown ids', () => {
-    expect(findEntry('not-a-template', [])).toBeUndefined();
+    expect(findEntry([], 'not-a-template')).toBeUndefined();
   });
 
   it('builds slugs from catalog ids', () => {
@@ -58,9 +66,14 @@ describe('catalog lookup', () => {
       { ids: ['password-reset'], render: () => 'test' },
     ];
     
-    expect(slugFromId('WelcomeEmail', testCatalog)).toBe('welcome');
-    expect(slugFromId('password-reset', testCatalog)).toBe('password-reset');
-    expect(slugFromId('UnknownThing', testCatalog)).toBe('unknown-thing');
+    expect(slugFromId(testCatalog, 'WelcomeEmail')).toBe('welcome');
+    expect(slugFromId(testCatalog, 'password-reset')).toBe('password-reset');
+    expect(slugFromId(testCatalog, 'UnknownThing')).toBe('unknown-thing');
+  });
+
+  it('throws error when catalog is not an array', () => {
+    expect(() => findEntry(null as any, 'test')).toThrow('catalog must be an array');
+    expect(() => findEntry(undefined as any, 'test')).toThrow('catalog must be an array');
   });
 });
 
