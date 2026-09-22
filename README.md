@@ -126,61 +126,134 @@ The package name **must** stay scoped as `@llazyemail/...` — GitHub Packages o
 After the first successful publish, the package appears under the repo **Packages** tab:
 https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template
 
-## Recent Code Improvements
+## Major Refactoring Report
 
-The codebase has been significantly improved to address migration issues and enhance robustness:
+This library underwent a significant refactoring to transition from a hardcoded template system to a truly generic template generation engine.
 
-### Major Refactoring: Library Genericization
-- **Removed hardcoded catalog**: The library no longer includes default templates or catalogs
-- **Sandbox examples**: Moved all template files to `sandbox/` directory for demonstration
-- **Consumer-controlled configuration**: All catalogs, payloads, and templates must be provided by consumers
-- **Updated CLI**: CLI now errors gracefully when no catalog is configured
-- **Deprecated compatibility layer**: Marked old API functions as deprecated with clear warnings
+### Session Summary
 
-### 1. Type Definitions Unified
-- Removed duplicate `TemplateCatalogEntry` interface from `template-catalog.ts`
-- Now uses a single interface from `types.ts` with optional `file`, `exportName`, `render`, and added `description` field
-- Updated tests to handle the optional nature of file-based entries
+**Goal**: Remove leftover code from the original project and make the library truly generic.
 
-### 2. Template Files Moved to Sandbox
-Moved all 6 template files from `src/templates/` to `sandbox/templates/`:
-- `password-reset.definition.ts` - Password reset email template
-- `order-confirmation.definition.ts` - Order confirmation template
-- `welcomeEmail.ts` - Welcome email template
-- `invoiceEmail.ts` - Invoice email template
-- `trialExpiringEmail.ts` - Trial expiration reminder
-- `userInvitationEmail.ts` - User invitation template
+**Result**: The library now requires consumers to provide all templates, catalogs, and sample data.
 
-### 3. Fixed Imports and API Structure
-- Reorganized exports to clearly separate main API from legacy compatibility layer
-- Main API: `createGenerator`, `TemplateGenerator`, catalog functions
-- Legacy API: marked as deprecated with JSDoc comments
-- Simple HTML generator kept as utility function
-- Removed exports of empty CATALOG and SAMPLE_PAYLOADS from main index
+### Changes Made
 
-### 4. Made Date Handling Generic
-- Removed hardcoded `signupDate` special handling from `payload.ts`
-- Removed hardcoded `signupDate` logic from `render.ts`
-- Date revival now works generically for any date field
-- Added test to verify generic date handling
+#### 1. Architecture Change: Library Genericization
+- **Before**: Library included hardcoded templates and catalogs from the original project
+- **After**: Library is completely generic - consumers provide everything
+- **Impact**: Breaking change for existing users, but provides proper library architecture
 
-### 5. Added Proper Error Handling
-- Added try-catch in `listTemplateFiles()` with descriptive error messages
-- Added data directory existence check in `loadPayload()` before attempting file reads
-- Added `allowMissingDirectories` configuration option for flexible error handling
-- Added helpful error messages when directories don't exist
-- CLI now provides clear error when no catalog is configured
+#### 2. Template Files Migration
+- **Moved**: All 6 template files from `src/templates/` to `sandbox/templates/`
+- **Created**: `sandbox/example-catalog.ts` with example catalog structure
+- **Created**: `sandbox/example-usage.ts` demonstrating proper library usage
+- **Created**: `sandbox/README.md` with sandbox-specific documentation
 
-### 6. Updated Tests for Dynamic Catalogs
-- All tests now use dynamic catalogs instead of hardcoded ones
-- Tests create their own catalogs and sample payloads
-- Removed dependencies on the original hardcoded catalog
-- Added tests for empty catalog scenarios
+#### 3. API Cleanup
+- **Removed**: Exports of hardcoded `CATALOG` and `SAMPLE_PAYLOADS` from main index
+- **Updated**: `generator.ts` to use empty defaults instead of hardcoded catalog
+- **Deprecated**: Compatibility layer functions with clear JSDoc warnings
+- **Enhanced**: CLI to error gracefully when no catalog is configured
 
-### 7. Example Usage and Documentation
-- Created `sandbox/example-catalog.ts` showing how to structure a catalog
-- Created `sandbox/example-usage.ts` demonstrating library usage
-- Created `sandbox/README.md` with sandbox-specific documentation
-- Updated main README to reflect the new generic library approach
+#### 4. Test Modernization
+- **Updated**: All tests to use dynamic catalogs instead of hardcoded ones
+- **Fixed**: Test imports to use main API instead of compatibility layer
+- **Added**: Tests for empty catalog scenarios
+- **Added**: Catalog validation tests
 
-These improvements make the codebase truly generic, maintainable, type-safe, and robust while providing clear migration paths for existing users.
+#### 5. Code Quality Improvements
+- **Unified**: Type definitions (removed duplicate interfaces)
+- **Genericized**: Date handling (removed hardcoded field assumptions)
+- **Enhanced**: Error handling for missing directories
+- **Added**: `allowMissingDirectories` configuration option
+
+#### 6. Documentation Updates
+- **Updated**: Main README to reflect generic library approach
+- **Created**: AGENTS.md for AI agent development guidance
+- **Updated**: Migration context and common pitfalls documentation
+- **Added**: Clear migration examples and usage patterns
+
+### Migration Guide for Existing Users
+
+If you were using the previous version with hardcoded templates:
+
+```typescript
+// Old way (no longer works)
+import { CATALOG, SAMPLE_PAYLOADS } from '@llazyemail/generate-template';
+const gen = createGenerator({ catalog: CATALOG, samplePayloads: SAMPLE_PAYLOADS });
+
+// New way (required)
+import { createGenerator } from '@llazyemail/generate-template';
+
+// Define your own catalog
+const MY_CATALOG = [
+  {
+    ids: ['welcome', 'WelcomeEmail'],
+    file: 'welcomeEmail.ts',
+    exportName: 'WelcomeEmail',
+  },
+  // ... your other templates
+];
+
+const MY_SAMPLE_PAYLOADS = {
+  welcome: { name: 'Alex' },
+  // ... your sample data
+};
+
+const gen = createGenerator({
+  catalog: MY_CATALOG,
+  samplePayloads: MY_SAMPLE_PAYLOADS,
+  templatesDir: 'path/to/your/templates',
+});
+```
+
+### Benefits of This Refactoring
+
+1. **True Library**: The package is now a proper library, not a bundled application
+2. **Flexibility**: Consumers can use any template structure they want
+3. **Maintainability**: No need to maintain example templates in the library
+4. **Clarity**: Clear separation between library and example usage
+5. **Type Safety**: Better type definitions and validation
+6. **Error Handling**: Improved error messages and handling
+
+### Files Changed
+
+**Library Core:**
+- `src/template-catalog.ts` - Changed to empty defaults with deprecation warnings
+- `src/generator.ts` - Updated to use empty defaults
+- `src/generate-template.ts` - Added deprecation warnings
+- `src/index.ts` - Removed catalog/payload exports
+- `src/cli.ts` - Added empty catalog error handling
+- `src/resolve.ts` - Added catalog validation
+- `src/payload.ts` - Enhanced error handling
+- `src/render.ts` - Genericized date handling
+
+**Tests:**
+- `src/generator.test.ts` - Updated for dynamic catalogs
+- `src/generate-template.test.ts` - Complete rewrite for new API
+- `src/template-catalog.test.ts` - Updated for generic catalog validation
+- `src/index.test.ts` - Updated description
+
+**New Files:**
+- `sandbox/templates/*` - 6 example template files
+- `sandbox/example-catalog.ts` - Example catalog configuration
+- `sandbox/example-usage.ts` - Usage demonstration
+- `sandbox/README.md` - Sandbox documentation
+- `AGENTS.md` - AI agent development guide
+
+### Breaking Changes
+
+- **CATALOG and SAMPLE_PAYLOADS**: No longer exported from main index
+- **Default templates**: Removed from library
+- **Compatibility layer**: Marked as deprecated
+- **CLI behavior**: Errors when no catalog is configured
+
+### Future Recommendations
+
+1. **Consider removing compatibility layer**: After a deprecation period, remove `generate-template.ts`
+2. **Add more examples**: Expand sandbox with different template patterns
+3. **Documentation**: Add more migration examples and best practices
+4. **Type validation**: Consider adding runtime schema validation
+5. **Plugin system**: Consider adding a plugin system for common template patterns
+
+This refactoring transforms the package from a project-specific tool into a proper, reusable library that consumers can adapt to their specific needs.
