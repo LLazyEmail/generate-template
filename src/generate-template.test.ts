@@ -53,7 +53,7 @@ describe('catalog lookup', () => {
     
     expect(findEntry(testCatalog, 'password-reset')?.exportName).toBe('passwordReset');
     expect(findEntry(testCatalog, 'PasswordResetEmail')?.file).toBe('password-reset.definition.ts');
-    expect(findEntry(testCatalog, 'WELCOME')?.ids).toContain('password-reset');
+    expect(findEntry(testCatalog, 'PASSWORD-RESET')?.ids).toContain('password-reset');
   });
 
   it('returns undefined for unknown ids', () => {
