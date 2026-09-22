@@ -4,6 +4,9 @@ export function findEntry(
   catalog: TemplateCatalogEntry[],
   templateId: string
 ): TemplateCatalogEntry | undefined {
+  if (!Array.isArray(catalog)) {
+    throw new Error('catalog must be an array');
+  }
   const needle = String(templateId).toLowerCase();
   return catalog.find((entry) => entry.ids.some((id) => id.toLowerCase() === needle));
 }

@@ -34,12 +34,21 @@ export function main(argv = process.argv.slice(2), generator?: TemplateGenerator
     console.log(`Files in ${path.relative(gen.root, gen.templatesDir) || gen.templatesDir}:`);
     templateFiles.forEach((file) => console.log(`  ${file}`));
     console.log('Generatable templates:');
-    gen.catalog.forEach((entry) => {
-      const exists = entry.render ? true : Boolean(entry.file && fs.existsSync(path.join(gen.templatesDir, entry.file)));
-      const source = entry.render ? 'renderer' : entry.file ?? '(no source)';
-      console.log(`  ${entry.ids.join(' | ')}  <- ${source}${exists ? '' : ' (missing)'}`);
-    });
+    if (gen.catalog.length === 0) {
+      console.log('  (No catalog configured - use createGenerator() with catalog option)');
+    } else {
+      gen.catalog.forEach((entry) => {
+        const exists = entry.render ? true : Boolean(entry.file && fs.existsSync(path.join(gen.templatesDir, entry.file)));
+        const source = entry.render ? 'renderer' : entry.file ?? '(no source)';
+        console.log(`  ${entry.ids.join(' | ')}  <- ${source}${exists ? '' : ' (missing)'}`);
+      });
+    }
     return;
+  }
+
+  if (gen.catalog.length === 0) {
+    console.error('Error: No catalog configured. Use createGenerator() with catalog option.');
+    process.exit(1);
   }
 
   const wantAll = args.all === true || !args.template || args.template === 'all';

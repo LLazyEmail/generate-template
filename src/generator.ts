@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
 import { findEntry, slugFromId } from './resolve';
 import { loadPayload } from './payload';
 import { renderEntry } from './render';
@@ -26,8 +25,8 @@ export class TemplateGenerator {
   readonly allowMissingDirectories: boolean;
 
   constructor(config: GeneratorConfig = {}) {
-    this.catalog = config.catalog ?? CATALOG;
-    this.samplePayloads = config.samplePayloads ?? SAMPLE_PAYLOADS;
+    this.catalog = config.catalog ?? [];
+    this.samplePayloads = config.samplePayloads ?? {};
     this.root = path.resolve(config.root ?? process.cwd());
     this.templatesDir = path.resolve(this.root, config.templatesDir ?? path.join('src', 'templates'));
     this.dataDir = path.resolve(this.root, config.dataDir ?? path.join('src', 'data'));
@@ -108,4 +107,19 @@ export class TemplateGenerator {
 
 export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {
   return new TemplateGenerator(config);
+}
+
+// Lazy initialization for default generator instance
+// This is used by the compatibility layer to avoid issues with missing directories during import
+let _defaultGenerator: TemplateGenerator | null = null;
+
+export function getDefaultGenerator(): TemplateGenerator {
+  if (!_defaultGenerator) {
+    _defaultGenerator = createGenerator();
+  }
+  return _defaultGenerator;
+}
+
+export function resetDefaultGenerator(): void {
+  _defaultGenerator = null;
 }

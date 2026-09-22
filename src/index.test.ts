@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateTemplate } from './index';
 
-describe('generateTemplate', () => {
+describe('generateTemplate (HTML utility)', () => {
   it('renders a titled HTML document', () => {
     const html = generateTemplate({ title: 'Weekly Digest' });
 
