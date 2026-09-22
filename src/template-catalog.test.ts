@@ -15,7 +15,8 @@ describe('template catalog', () => {
     for (const entry of CATALOG) {
       expect(entry.ids.length).toBeGreaterThan(0);
       if (entry.file) {
-        expect(entry.exportName).toBeTruthy();
+        expect(entry.exportName).toBeDefined();
+        expect(typeof entry.exportName).toBe('string');
       }
       for (const id of entry.ids) {
         expect(SAMPLE_PAYLOADS[id], `missing payload for ${id}`).toBeTruthy();
@@ -33,8 +34,8 @@ describe('template catalog', () => {
       expect(entry.ids).toBeInstanceOf(Array);
       expect(entry.ids.length).toBeGreaterThan(0);
       // Either file+exportName or render should be present
-      const hasFile = entry.file && entry.exportName;
-      const hasRender = entry.render;
+      const hasFile = Boolean(entry.file && entry.exportName);
+      const hasRender = Boolean(entry.render);
       expect(hasFile || hasRender).toBe(true);
     }
   });
