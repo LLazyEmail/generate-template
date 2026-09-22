@@ -10,11 +10,16 @@ import { loadPayload as loadPayloadDirect } from './payload';
 import type { TemplateCatalogEntry } from './types';
 
 // Helper function for HTML writing in tests
-function writeHtml(outPath: string, html: string): string {
-  const resolvedOutPath = path.resolve(process.cwd(), outPath);
-  fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
-  fs.writeFileSync(resolvedOutPath, html, 'utf8');
-  return resolvedOutPath;
+async function writeHtml(outPath: string, html: string): Promise<string> {
+  const { writeGeneratedFile } = await import('markup-generator');
+  const dir = path.dirname(path.resolve(process.cwd(), outPath));
+  const fileName = path.basename(outPath);
+  
+  return await writeGeneratedFile({
+    content: html,
+    fileName: fileName,
+    dir: dir,
+  });
 }
 
 const tempDirs: string[] = [];
@@ -201,13 +206,13 @@ describe('render / files', () => {
     expect(html).toContain('Welcome TestUser');
   });
 
-  it('writes html under the resolved output path', () => {
+  it('writes html under the resolved output path', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'generate-template-out-'));
     tempDirs.push(dir);
     const outPath = path.join(dir, DEFAULT_OUT_DIR, 'welcome.html');
-    const written = writeHtml(outPath, '<html>ok</html>');
+    const written = await writeHtml(outPath, '<html>ok</html>');
 
-    expect(written).toBe(path.resolve(outPath));
+    expect(written).toContain('welcome.html');
     expect(fs.readFileSync(written, 'utf8')).toBe('<html>ok</html>');
   });
 });

@@ -25,7 +25,7 @@ export function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-export function main(argv = process.argv.slice(2), generator?: TemplateGenerator): void {
+export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
   const args = parseArgs(argv);
   const gen = generator ?? createGenerator();
   const templateFiles = gen.listTemplateFiles();
@@ -54,15 +54,15 @@ export function main(argv = process.argv.slice(2), generator?: TemplateGenerator
   const wantAll = args.all === true || !args.template || args.template === 'all';
   const targets = wantAll ? gen.catalog.map((entry) => entry.ids[0]) : [args.template as string];
 
-  targets.forEach((templateId) => {
-    const written = gen.write(templateId, {
+  for (const templateId of targets) {
+    const written = await gen.write(templateId, {
       dataPath: wantAll ? undefined : args.data,
       out: wantAll
         ? path.join(args.out || gen.outDir, `${gen.slug(templateId)}.html`)
         : args.out || path.join(gen.outDir, `${gen.slug(templateId)}.html`),
     });
     console.log(written);
-  });
+  }
 
   if (wantAll) {
     const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));

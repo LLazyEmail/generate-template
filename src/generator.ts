@@ -1,5 +1,5 @@
-import fs from 'node:fs';
 import path from 'node:path';
+import { writeGeneratedFile, resolveFromCwd } from 'markup-generator';
 import { findEntry, slugFromId } from './resolve';
 import { loadPayload } from './payload';
 import { renderEntry } from './render';
@@ -44,6 +44,10 @@ export class TemplateGenerator {
   }
 
   listTemplateFiles(): string[] {
+    // Note: markup-generator doesn't have a direct equivalent for listing files
+    // We keep the original implementation but could potentially use markup-generator's
+    // resolveFromCwd for path resolution if needed
+    const fs = require('node:fs');
     if (!fs.existsSync(this.templatesDir)) {
       return [];
     }
@@ -86,22 +90,32 @@ export class TemplateGenerator {
     });
   }
 
-  writeHtml(outPath: string, html: string): string {
-    const resolvedOutPath = path.resolve(process.cwd(), outPath);
-    fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
-    fs.writeFileSync(resolvedOutPath, html, 'utf8');
-    return resolvedOutPath;
+  async writeHtml(outPath: string, html: string): Promise<string> {
+    const resolvedPath = resolveFromCwd(outPath);
+    const dir = path.dirname(resolvedPath);
+    const fileName = path.basename(resolvedPath);
+    
+    return await writeGeneratedFile({
+      content: html,
+      fileName: fileName,
+      dir: dir,
+    });
   }
 
-  write(templateId: string, options: WriteOptions = {}): string {
+  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
     const html = this.render(templateId, options);
     const fileName = `${this.slug(templateId)}.html`;
     const outPath = options.out || path.join(this.outDir, fileName);
     return this.writeHtml(outPath, html);
   }
 
-  writeAll(outDir = this.outDir): string[] {
-    return this.catalog.map((entry) => this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) }));
+  async writeAll(outDir = this.outDir): Promise<string[]> {
+    const results: string[] = [];
+    for (const entry of this.catalog) {
+      const result = await this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) });
+      results.push(result);
+    }
+    return results;
   }
 }
 
