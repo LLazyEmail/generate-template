@@ -18,12 +18,12 @@ An npm package cannot look next to itself for `src/templates` and `src/data`. Th
 
 `createGenerator(config)` is the public API. The consumer supplies the catalog and how to render.
 
+**Important**: This library no longer includes default templates or catalogs. Consumers must provide their own catalog and sample payloads. See the `sandbox/` directory for examples.
+
 Render order:
 
 1. an injected `render` function (or an object with `{ render() }`)
 2. an optional file on the consumer’s disk
-
-`CATALOG` and `SAMPLE_PAYLOADS` are only a default registry copied from the source project. They are not required to use the module.
 
 ## Install from GitHub Packages
 
@@ -67,14 +67,29 @@ const file = generate.write('welcome', { out: 'generated/welcome.html' });
 Same engine, old layout, when you still have the original project on disk:
 
 ```ts
-import { createGenerator, CATALOG, SAMPLE_PAYLOADS } from '@llazyemail/generate-template';
+import { createGenerator } from '@llazyemail/generate-template';
+
+// Define your own catalog (or copy from sandbox/example-catalog.ts)
+const MY_CATALOG = [
+  {
+    ids: ['welcome', 'WelcomeEmail'],
+    file: 'welcomeEmail.ts',
+    exportName: 'WelcomeEmail',
+  },
+  // ... more templates
+];
+
+const MY_SAMPLE_PAYLOADS = {
+  welcome: { name: 'Alex' },
+  // ... more sample payloads
+};
 
 const generate = createGenerator({
   root: process.cwd(),
   templatesDir: 'src/templates',
   dataDir: 'src/data',
-  catalog: CATALOG,
-  samplePayloads: SAMPLE_PAYLOADS,
+  catalog: MY_CATALOG,
+  samplePayloads: MY_SAMPLE_PAYLOADS,
 });
 ```
 
@@ -115,13 +130,20 @@ https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template
 
 The codebase has been significantly improved to address migration issues and enhance robustness:
 
+### Major Refactoring: Library Genericization
+- **Removed hardcoded catalog**: The library no longer includes default templates or catalogs
+- **Sandbox examples**: Moved all template files to `sandbox/` directory for demonstration
+- **Consumer-controlled configuration**: All catalogs, payloads, and templates must be provided by consumers
+- **Updated CLI**: CLI now errors gracefully when no catalog is configured
+- **Deprecated compatibility layer**: Marked old API functions as deprecated with clear warnings
+
 ### 1. Type Definitions Unified
 - Removed duplicate `TemplateCatalogEntry` interface from `template-catalog.ts`
 - Now uses a single interface from `types.ts` with optional `file`, `exportName`, `render`, and added `description` field
 - Updated tests to handle the optional nature of file-based entries
 
-### 2. Created Missing Template Files
-Created all 6 template files in `src/templates/`:
+### 2. Template Files Moved to Sandbox
+Moved all 6 template files from `src/templates/` to `sandbox/templates/`:
 - `password-reset.definition.ts` - Password reset email template
 - `order-confirmation.definition.ts` - Order confirmation template
 - `welcomeEmail.ts` - Welcome email template
@@ -129,11 +151,12 @@ Created all 6 template files in `src/templates/`:
 - `trialExpiringEmail.ts` - Trial expiration reminder
 - `userInvitationEmail.ts` - User invitation template
 
-### 3. Fixed Imports in index.ts
+### 3. Fixed Imports and API Structure
 - Reorganized exports to clearly separate main API from legacy compatibility layer
 - Main API: `createGenerator`, `TemplateGenerator`, catalog functions
-- Legacy API: clearly marked with `LEGACY_` prefixes
+- Legacy API: marked as deprecated with JSDoc comments
 - Simple HTML generator kept as utility function
+- Removed exports of empty CATALOG and SAMPLE_PAYLOADS from main index
 
 ### 4. Made Date Handling Generic
 - Removed hardcoded `signupDate` special handling from `payload.ts`
@@ -146,11 +169,18 @@ Created all 6 template files in `src/templates/`:
 - Added data directory existence check in `loadPayload()` before attempting file reads
 - Added `allowMissingDirectories` configuration option for flexible error handling
 - Added helpful error messages when directories don't exist
+- CLI now provides clear error when no catalog is configured
 
-### 6. Updated Tests
-- Added test for generic date handling with multiple date fields
-- Added test for missing data directory handling
-- Updated catalog validation tests to handle optional file/render fields
-- Added test for graceful handling of missing templates directory
+### 6. Updated Tests for Dynamic Catalogs
+- All tests now use dynamic catalogs instead of hardcoded ones
+- Tests create their own catalogs and sample payloads
+- Removed dependencies on the original hardcoded catalog
+- Added tests for empty catalog scenarios
 
-These improvements make the codebase more maintainable, type-safe, and robust while maintaining backward compatibility.
+### 7. Example Usage and Documentation
+- Created `sandbox/example-catalog.ts` showing how to structure a catalog
+- Created `sandbox/example-usage.ts` demonstrating library usage
+- Created `sandbox/README.md` with sandbox-specific documentation
+- Updated main README to reflect the new generic library approach
+
+These improvements make the codebase truly generic, maintainable, type-safe, and robust while providing clear migration paths for existing users.

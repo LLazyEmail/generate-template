@@ -13,6 +13,7 @@ This file contains information to help AI agents understand and work with this p
 - **Testing**: Vitest
 - **Build Tool**: tsup
 - **Registry**: GitHub Packages (@llazyemail scope)
+- **Architecture**: Generic library - consumers provide all templates and catalogs
 
 ## Project Structure
 
@@ -159,18 +160,24 @@ expect(() => someFunction()).toThrow(/Error pattern|Alternative pattern/);
 
 This project was migrated from another application and underwent significant refactoring:
 
+### Library Philosophy
+- **No default templates**: The library is now truly generic - consumers must provide their own catalog and templates
+- **Sandbox examples**: Template files and catalogs have been moved to `sandbox/` for demonstration purposes
+- **Consumer-controlled**: All configuration (catalog, payloads, paths) is provided by the consuming project
+
 ### Legacy Compatibility Layer
-- `generate-template.ts` provides compatibility with the old API
+- `generate-template.ts` provides compatibility with the old API (marked as deprecated)
 - New code should use `createGenerator()` from the main index
-- The compatibility layer uses lazy initialization to avoid import-time errors
+- The compatibility layer uses empty defaults and requires consumer configuration
+- CLI will error if no catalog is configured
 
 ### What Was Fixed
 1. **Type conflicts**: Unified duplicate interface definitions
-2. **Missing files**: Created all template files referenced in catalog
+2. **Removed hardcoded catalog**: Moved templates to sandbox, made library truly generic
 3. **Import organization**: Separated main API from legacy compatibility
 4. **Date handling**: Removed hardcoded field assumptions
 5. **Error handling**: Added robust directory and file checks
-6. **Test coverage**: Updated tests to match improved codebase
+6. **Test coverage**: Updated tests to use dynamic catalogs instead of hardcoded ones
 
 ## Common Pitfalls
 
@@ -193,6 +200,14 @@ This project was migrated from another application and underwent significant ref
 ### 5. Synchronous File Operations
 ❌ **Don't**: Use async file operations where sync is expected
 ✅ **Do**: Use `fs.*Sync` methods consistently
+
+### 6. Assuming Default Catalog
+❌ **Don't**: Assume the library provides default templates or catalogs
+✅ **Do**: Always provide your own catalog and sample payloads via `createGenerator()`
+
+### 7. Using Deprecated API
+❌ **Don't**: Use functions from `generate-template.ts` in new code
+✅ **Do**: Use `createGenerator()` and the main API from `index.ts`
 
 ## Build and Publishing
 

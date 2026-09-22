@@ -2,21 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
-import {
-  DEFAULT_OUT_DIR,
-  findEntry,
-  listTemplateFiles,
-  loadPayload,
-  parseArgs,
-  renderOne,
-  reviveDates,
-  serializePayload,
-  slugFromId,
-  writeHtml,
-} from './generate-template';
-import { createGenerator } from './generator';
+import { createGenerator, DEFAULT_OUT_DIR } from './generator';
+import { parseArgs } from './cli';
+import { loadPayload, reviveDates, serializePayload } from './payload';
+import { findEntry, slugFromId, availableIds } from './resolve';
 import { loadPayload as loadPayloadDirect } from './payload';
+import type { TemplateCatalogEntry } from './types';
 
 const tempDirs: string[] = [];
 
@@ -44,39 +35,53 @@ describe('parseArgs', () => {
 
 describe('catalog lookup', () => {
   it('resolves aliases case-insensitively', () => {
-    expect(findEntry('password-reset')?.exportName).toBe('passwordReset');
-    expect(findEntry('PasswordResetEmail')?.file).toBe('password-reset.definition.ts');
-    expect(findEntry('WELCOME')?.ids).toContain('WelcomeEmail');
+    const testCatalog: TemplateCatalogEntry[] = [
+      {
+        ids: ['password-reset', 'PasswordResetEmail'],
+        file: 'password-reset.definition.ts',
+        exportName: 'passwordReset',
+      },
+    ];
+    
+    expect(findEntry('password-reset', testCatalog)?.exportName).toBe('passwordReset');
+    expect(findEntry('PasswordResetEmail', testCatalog)?.file).toBe('password-reset.definition.ts');
+    expect(findEntry('WELCOME', testCatalog)?.ids).toContain('password-reset');
   });
 
   it('returns undefined for unknown ids', () => {
-    expect(findEntry('not-a-template')).toBeUndefined();
+    expect(findEntry('not-a-template', [])).toBeUndefined();
   });
 
   it('builds slugs from catalog ids', () => {
-    expect(slugFromId('WelcomeEmail')).toBe('welcome');
-    expect(slugFromId('password-reset')).toBe('password-reset');
-    expect(slugFromId('UnknownThing')).toBe('unknown-thing');
+    const testCatalog: TemplateCatalogEntry[] = [
+      { ids: ['WelcomeEmail'], render: () => 'test' },
+      { ids: ['password-reset'], render: () => 'test' },
+    ];
+    
+    expect(slugFromId('WelcomeEmail', testCatalog)).toBe('welcome');
+    expect(slugFromId('password-reset', testCatalog)).toBe('password-reset');
+    expect(slugFromId('UnknownThing', testCatalog)).toBe('unknown-thing');
   });
 });
 
 describe('payloads', () => {
-  it('loads built-in sample payloads for every catalog id', () => {
-    for (const entry of CATALOG) {
-      for (const id of entry.ids) {
-        // Skip test if data directory doesn't exist, as loadPayload will throw
-        try {
-          const payload = loadPayload(id);
-          expect(payload).toBe(SAMPLE_PAYLOADS[id]);
-        } catch (error) {
-          // If data directory doesn't exist, this is expected
-          if (error instanceof Error && error.message.includes('Data directory does not exist')) {
-            continue;
-          }
-          throw error;
-        }
-      }
-    }
+  it('loads sample payloads from generator config', () => {
+    const testCatalog: TemplateCatalogEntry[] = [
+      { ids: ['test1'], render: () => 'test1' },
+      { ids: ['test2'], render: () => 'test2' },
+    ];
+    const testSamplePayloads = {
+      test1: { name: 'Test1' },
+      test2: { name: 'Test2' },
+    };
+    
+    const gen = createGenerator({
+      catalog: testCatalog,
+      samplePayloads: testSamplePayloads,
+    });
+    
+    expect(gen.loadPayload('test1')).toEqual({ name: 'Test1' });
+    expect(gen.loadPayload('test2')).toEqual({ name: 'Test2' });
   });
 
   it('loads a JSON payload from --data', () => {
@@ -85,18 +90,26 @@ describe('payloads', () => {
     const dataPath = path.join(dir, 'custom.json');
     fs.writeFileSync(dataPath, JSON.stringify({ name: 'Pat' }));
 
-    expect(loadPayload('welcome', dataPath)).toEqual({ name: 'Pat' });
+    const gen = createGenerator({ catalog: [], samplePayloads: {} });
+    expect(gen.loadPayload('any-id', dataPath)).toEqual({ name: 'Pat' });
   });
 
   it('throws when no sample or data file exists', () => {
-    expect(() => loadPayload('missing-template')).toThrow(/Data directory does not exist|No payload for "missing-template"/);
+    const gen = createGenerator({
+      catalog: [{ ids: ['test'], render: () => 'test' }],
+      samplePayloads: {},
+    });
+    expect(() => gen.loadPayload('test')).toThrow(/Data directory does not exist|No payload for "test"/);
   });
 
   it('handles missing data directory gracefully when using sample payloads', () => {
-    // This test ensures that when sample payloads are available, the code doesn't fail
-    // even if the data directory doesn't exist
-    const payload = loadPayload('welcome');
-    expect(payload).toBeDefined();
+    const gen = createGenerator({
+      catalog: [{ ids: ['test'], render: () => 'test' }],
+      samplePayloads: { test: { data: 'sample' } },
+    });
+    
+    const payload = gen.loadPayload('test');
+    expect(payload).toEqual({ data: 'sample' });
   });
 
   it('provides helpful error when data directory missing and no sample payload', () => {
@@ -153,21 +166,14 @@ describe('render / files', () => {
     expect(gen.listTemplateFiles()).toEqual([]);
   });
 
-  it('lists existing template files when directory exists', () => {
-    // This test checks that the actual templates directory lists files
-    const files = listTemplateFiles();
-    // If templates directory exists, it should list files
-    // If it doesn't exist, it should return empty array
-    expect(Array.isArray(files)).toBe(true);
-  });
-
   it('rejects unknown template ids before touching disk', () => {
-    expect(() => renderOne('nope', {})).toThrow(/Unknown template id/);
+    const gen = createGenerator({
+      catalog: [{ ids: ['test'], render: () => 'test' }],
+    });
+    expect(() => gen.render('nope', { payload: {} })).toThrow(/Unknown template id/);
   });
 
-  it('renders templates when files exist', () => {
-    // This test now verifies that templates can be rendered when files exist
-    // Skip this test if templates directory doesn't exist in test environment
+  it('renders templates with inline render functions', () => {
     const gen = createGenerator({
       catalog: [{
         ids: ['test-template'],
