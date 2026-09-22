@@ -57,7 +57,7 @@ function revive(value) {
   if (value && typeof value === 'object') {
     const next = {};
     for (const [key, val] of Object.entries(value)) {
-      next[key] = key === 'signupDate' ? new Date(typeof val === 'object' && val.__date ? val.__date : val) : revive(val);
+      next[key] = revive(val);
     }
     return next;
   }

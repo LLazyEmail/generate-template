@@ -1,43 +1,44 @@
 /**
  * Catalog of every renderable module in src/templates.
  */
-
-export interface TemplateCatalogEntry {
-  ids: string[];
-  file: string;
-  exportName: string;
-}
+import type { TemplateCatalogEntry } from './types';
 
 export const CATALOG: TemplateCatalogEntry[] = [
   {
     ids: ['password-reset', 'PasswordResetEmail'],
     file: 'password-reset.definition.ts',
     exportName: 'passwordReset',
+    description: 'Password reset email',
   },
   {
     ids: ['order-confirmation', 'OrderConfirmationEmail'],
     file: 'order-confirmation.definition.ts',
     exportName: 'orderConfirmation',
+    description: 'Order confirmation email',
   },
   {
     ids: ['WelcomeEmail', 'welcome'],
     file: 'welcomeEmail.ts',
     exportName: 'WelcomeEmail',
+    description: 'Welcome email for new users',
   },
   {
     ids: ['InvoiceEmail', 'invoice'],
     file: 'invoiceEmail.ts',
     exportName: 'InvoiceEmail',
+    description: 'Invoice email',
   },
   {
     ids: ['TrialExpiringEmail', 'trial-expiring'],
     file: 'trialExpiringEmail.ts',
     exportName: 'TrialExpiringEmail',
+    description: 'Trial expiration reminder',
   },
   {
     ids: ['UserInvitationEmail', 'user-invitation'],
     file: 'userInvitationEmail.ts',
     exportName: 'UserInvitationEmail',
+    description: 'User invitation email',
   },
 ];
 

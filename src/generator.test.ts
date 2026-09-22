@@ -85,4 +85,13 @@ describe('createGenerator', () => {
 
     expect(() => gen.render('welcome', { payload: {} })).toThrow(/Unknown template id/);
   });
+
+  it('handles missing templates directory gracefully', () => {
+    const gen = createGenerator({
+      templatesDir: '/nonexistent/templates',
+      catalog: [{ ids: ['test'], render: () => 'test' }],
+    });
+
+    expect(gen.listTemplateFiles()).toEqual([]);
+  });
 });

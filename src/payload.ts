@@ -43,11 +43,6 @@ export function reviveDates(value: unknown): unknown {
     const next: Record<string, unknown> = {};
     Object.keys(value as Record<string, unknown>).forEach((key) => {
       const current = (value as Record<string, unknown>)[key];
-      if (key === 'signupDate') {
-        const revived = reviveDates(current);
-        next[key] = revived instanceof Date ? revived : new Date(current as string | Date);
-        return;
-      }
       next[key] = reviveDates(current);
     });
     return next;
@@ -61,10 +56,24 @@ export function loadPayload(options: {
   catalog: TemplateCatalogEntry[];
   samplePayloads: Record<string, unknown>;
   dataDir: string;
+  allowMissingDirectories?: boolean;
 }): unknown {
-  const { templateId, dataPath, catalog, samplePayloads, dataDir } = options;
+  const { templateId, dataPath, catalog, samplePayloads, dataDir, allowMissingDirectories = false } = options;
   if (dataPath) return requireData(path.resolve(process.cwd(), dataPath));
   if (samplePayloads[templateId]) return samplePayloads[templateId];
+  
+  // Check if data directory exists before trying to load files
+  if (!fs.existsSync(dataDir)) {
+    if (allowMissingDirectories) {
+      throw new Error(
+        `No payload for "${templateId}". Pass dataPath or add sample payload. Data directory ${dataDir} does not exist.`
+      );
+    }
+    throw new Error(
+      `Data directory does not exist: ${dataDir}. Pass dataPath or create the directory with sample data files.`
+    );
+  }
+  
   const slugs = [templateId, slugFromId(catalog, templateId)];
   for (const slug of slugs) {
     const candidate = path.join(dataDir, `${slug}.data.js`);

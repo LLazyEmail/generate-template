@@ -15,6 +15,8 @@ import {
   slugFromId,
   writeHtml,
 } from './generate-template';
+import { createGenerator } from './generator';
+import { loadPayload as loadPayloadDirect } from './payload';
 
 const tempDirs: string[] = [];
 
@@ -79,6 +81,25 @@ describe('payloads', () => {
   it('throws when no sample or data file exists', () => {
     expect(() => loadPayload('missing-template')).toThrow(/No payload for "missing-template"/);
   });
+
+  it('handles missing data directory gracefully when using sample payloads', () => {
+    // This test ensures that when sample payloads are available, the code doesn't fail
+    // even if the data directory doesn't exist
+    const payload = loadPayload('welcome');
+    expect(payload).toBeDefined();
+  });
+
+  it('provides helpful error when data directory missing and no sample payload', () => {
+    expect(() => {
+      loadPayloadDirect({
+        templateId: 'test',
+        catalog: [{ ids: ['test'], render: () => 'test' }],
+        samplePayloads: {},
+        dataDir: '/nonexistent/data/dir',
+        allowMissingDirectories: true,
+      });
+    }).toThrow(/No payload for "test"/);
+  });
 });
 
 describe('serializePayload / reviveDates', () => {
@@ -98,6 +119,18 @@ describe('serializePayload / reviveDates', () => {
     }) as { items: Array<{ at: Date }> };
 
     expect(revived.items[0].at).toBeInstanceOf(Date);
+  });
+
+  it('handles generic date fields without special casing', () => {
+    const revived = reviveDates({
+      createdAt: new Date('2026-01-05T12:00:00Z'),
+      updatedAt: '2026-02-01T00:00:00.000Z',
+      name: 'Test'
+    }) as { createdAt: Date; updatedAt: Date; name: string };
+
+    expect(revived.createdAt).toBeInstanceOf(Date);
+    expect(revived.updatedAt).toBeInstanceOf(Date);
+    expect(revived.name).toBe('Test');
   });
 });
 

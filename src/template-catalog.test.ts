@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
+import type { TemplateCatalogEntry } from './types';
 
 describe('template catalog', () => {
   it('has unique primary ids and files', () => {
     const primaryIds = CATALOG.map((entry) => entry.ids[0]);
-    const files = CATALOG.map((entry) => entry.file);
+    const files = CATALOG.map((entry) => entry.file).filter(Boolean);
 
     expect(new Set(primaryIds).size).toBe(primaryIds.length);
     expect(new Set(files).size).toBe(files.length);
@@ -13,7 +14,9 @@ describe('template catalog', () => {
   it('exposes a sample payload for every alias', () => {
     for (const entry of CATALOG) {
       expect(entry.ids.length).toBeGreaterThan(0);
-      expect(entry.exportName).toBeTruthy();
+      if (entry.file) {
+        expect(entry.exportName).toBeTruthy();
+      }
       for (const id of entry.ids) {
         expect(SAMPLE_PAYLOADS[id], `missing payload for ${id}`).toBeTruthy();
       }
@@ -23,5 +26,16 @@ describe('template catalog', () => {
   it('keeps welcome signupDate as a Date', () => {
     const payload = SAMPLE_PAYLOADS.WelcomeEmail as { signupDate: Date };
     expect(payload.signupDate).toBeInstanceOf(Date);
+  });
+
+  it('validates catalog entry structure', () => {
+    for (const entry of CATALOG) {
+      expect(entry.ids).toBeInstanceOf(Array);
+      expect(entry.ids.length).toBeGreaterThan(0);
+      // Either file+exportName or render should be present
+      const hasFile = entry.file && entry.exportName;
+      const hasRender = entry.render;
+      expect(hasFile || hasRender).toBe(true);
+    }
   });
 });

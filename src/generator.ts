@@ -23,6 +23,7 @@ export class TemplateGenerator {
   readonly dataDir: string;
   readonly outDir: string;
   readonly skipFiles: Set<string>;
+  readonly allowMissingDirectories: boolean;
 
   constructor(config: GeneratorConfig = {}) {
     this.catalog = config.catalog ?? CATALOG;
@@ -32,6 +33,7 @@ export class TemplateGenerator {
     this.dataDir = path.resolve(this.root, config.dataDir ?? path.join('src', 'data'));
     this.outDir = config.outDir ?? DEFAULT_OUT_DIR;
     this.skipFiles = new Set(config.skipFiles ?? [...DEFAULT_SKIP]);
+    this.allowMissingDirectories = config.allowMissingDirectories ?? false;
   }
 
   find(templateId: string): TemplateCatalogEntry | undefined {
@@ -43,15 +45,24 @@ export class TemplateGenerator {
   }
 
   listTemplateFiles(): string[] {
-    if (!fs.existsSync(this.templatesDir)) return [];
-    return fs
-      .readdirSync(this.templatesDir)
-      .filter((name) => {
-        if (this.skipFiles.has(name)) return false;
-        if (/LATER\./i.test(name)) return false;
-        return /\.(ts|js)$/.test(name);
-      })
-      .sort();
+    if (!fs.existsSync(this.templatesDir)) {
+      return [];
+    }
+    try {
+      return fs
+        .readdirSync(this.templatesDir)
+        .filter((name) => {
+          if (this.skipFiles.has(name)) return false;
+          if (/LATER\./i.test(name)) return false;
+          return /\.(ts|js)$/.test(name);
+        })
+        .sort();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to read templates directory ${this.templatesDir}: ${error.message}`);
+      }
+      throw error;
+    }
   }
 
   loadPayload(templateId: string, dataPath?: string): unknown {
@@ -61,6 +72,7 @@ export class TemplateGenerator {
       catalog: this.catalog,
       samplePayloads: this.samplePayloads,
       dataDir: this.dataDir,
+      allowMissingDirectories: this.allowMissingDirectories,
     });
   }
 
