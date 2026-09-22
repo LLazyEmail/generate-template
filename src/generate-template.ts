@@ -10,13 +10,21 @@ import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
 import { main as runCli, parseArgs } from './cli';
 import type { CliArgs, TemplateCatalogEntry } from './types';
 
-const defaultGenerator = createGenerator();
+// Lazy initialization to avoid issues with missing directories during import
+let _defaultGenerator: TemplateGenerator | null = null;
+
+function getDefaultGenerator(): TemplateGenerator {
+  if (!_defaultGenerator) {
+    _defaultGenerator = createGenerator();
+  }
+  return _defaultGenerator;
+}
 
 export { DEFAULT_OUT_DIR, parseArgs, reviveDates, serializePayload };
 export type { CliArgs };
 
-export const TEMPLATES_DIR = defaultGenerator.templatesDir;
-export const DATA_DIR = defaultGenerator.dataDir;
+export const TEMPLATES_DIR = () => getDefaultGenerator().templatesDir;
+export const DATA_DIR = () => getDefaultGenerator().dataDir;
 
 export function findEntry(templateId: string): TemplateCatalogEntry | undefined {
   return findEntryIn(CATALOG, templateId);
@@ -27,7 +35,7 @@ export function slugFromId(templateId: string): string {
 }
 
 export function listTemplateFiles(): string[] {
-  return defaultGenerator.listTemplateFiles();
+  return getDefaultGenerator().listTemplateFiles();
 }
 
 export function loadPayload(templateId: string, dataPath?: string): unknown {
@@ -36,12 +44,12 @@ export function loadPayload(templateId: string, dataPath?: string): unknown {
     dataPath,
     catalog: CATALOG,
     samplePayloads: SAMPLE_PAYLOADS,
-    dataDir: defaultGenerator.dataDir,
+    dataDir: getDefaultGenerator().dataDir,
   });
 }
 
 export function writeHtml(outPath: string, html: string): string {
-  return defaultGenerator.writeHtml(outPath, html);
+  return getDefaultGenerator().writeHtml(outPath, html);
 }
 
 export function renderOne(templateId: string, payload: unknown): string {
@@ -49,13 +57,13 @@ export function renderOne(templateId: string, payload: unknown): string {
     templateId,
     payload,
     catalog: CATALOG,
-    templatesDir: defaultGenerator.templatesDir,
-    root: defaultGenerator.root,
+    templatesDir: getDefaultGenerator().templatesDir,
+    root: getDefaultGenerator().root,
   });
 }
 
 export function main(argv = process.argv.slice(2)): void {
-  runCli(argv, defaultGenerator);
+  runCli(argv, getDefaultGenerator());
 }
 
 export { TemplateGenerator };

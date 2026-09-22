@@ -7,6 +7,7 @@ export interface TemplateCatalogEntry {
   file?: string;
   exportName?: string;
   render?: TemplateRenderer;
+  description?: string;
 }
 
 export interface GeneratorConfig {
@@ -17,6 +18,7 @@ export interface GeneratorConfig {
   dataDir?: string;
   outDir?: string;
   skipFiles?: string[];
+  allowMissingDirectories?: boolean;
 }
 
 export interface RenderOptions {
