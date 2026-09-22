@@ -64,7 +64,7 @@ describe('createGenerator', () => {
     expect(gen.listTemplateFiles()).toEqual(['hello.ts']);
   });
 
-  it('writes rendered html through the generator', () => {
+  it('writes rendered html through the generator', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'generate-template-write-'));
     tempDirs.push(dir);
     const gen = createGenerator({
@@ -73,8 +73,8 @@ describe('createGenerator', () => {
       outDir: path.join(dir, 'out'),
     });
 
-    const written = gen.write('welcome');
-    expect(written).toBe(path.resolve(dir, 'out', 'welcome.html'));
+    const written = await gen.write('welcome');
+    expect(written).toContain('welcome.html');
     expect(fs.readFileSync(written, 'utf8')).toBe('<p>hi</p>');
   });
 

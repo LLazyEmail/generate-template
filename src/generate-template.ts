@@ -66,8 +66,8 @@ export function loadPayload(templateId: string, dataPath?: string): unknown {
 /**
  * @deprecated Use generator.writeHtml() instead
  */
-export function writeHtml(outPath: string, html: string): string {
-  return getDefaultGenerator().writeHtml(outPath, html);
+export async function writeHtml(outPath: string, html: string): Promise<string> {
+  return await getDefaultGenerator().writeHtml(outPath, html);
 }
 
 /**
@@ -86,8 +86,8 @@ export function renderOne(templateId: string, payload: unknown): string {
 /**
  * @deprecated Use createGenerator() and call main() on the instance instead
  */
-export function main(argv = process.argv.slice(2)): void {
-  runCli(argv, getDefaultGenerator());
+export async function main(argv = process.argv.slice(2)): Promise<void> {
+  await runCli(argv, getDefaultGenerator());
 }
 
 export { TemplateGenerator };
