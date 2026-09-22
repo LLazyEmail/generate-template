@@ -25,7 +25,7 @@ export function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
+export function main(argv = process.argv.slice(2), generator?: TemplateGenerator): void {
   const args = parseArgs(argv);
   const gen = generator ?? createGenerator();
   const templateFiles = gen.listTemplateFiles();
@@ -45,15 +45,15 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
   const wantAll = args.all === true || !args.template || args.template === 'all';
   const targets = wantAll ? gen.catalog.map((entry) => entry.ids[0]) : [args.template as string];
 
-  for (const templateId of targets) {
-    const written = await gen.write(templateId, {
+  targets.forEach((templateId) => {
+    const written = gen.write(templateId, {
       dataPath: wantAll ? undefined : args.data,
       out: wantAll
         ? path.join(args.out || gen.outDir, `${gen.slug(templateId)}.html`)
         : args.out || path.join(gen.outDir, `${gen.slug(templateId)}.html`),
     });
     console.log(written);
-  }
+  });
 
   if (wantAll) {
     const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
@@ -69,8 +69,5 @@ const invokedAsCli =
   typeof process.argv[1] === 'string' && path.resolve(process.argv[1]) === thisFile;
 
 if (invokedAsCli) {
-  main().catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+  main();
 }

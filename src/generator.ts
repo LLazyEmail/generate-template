@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createGenerator as createMarkupGenerator } from 'markup-generator';
 import { CATALOG, SAMPLE_PAYLOADS } from './template-catalog';
 import { findEntry, slugFromId } from './resolve';
+import { loadPayload } from './payload';
+import { renderEntry } from './render';
 import type {
   GeneratorConfig,
   RenderOptions,
@@ -22,7 +23,6 @@ export class TemplateGenerator {
   readonly dataDir: string;
   readonly outDir: string;
   readonly skipFiles: Set<string>;
-  private markupGenerator: any;
 
   constructor(config: GeneratorConfig = {}) {
     this.catalog = config.catalog ?? CATALOG;
@@ -32,12 +32,6 @@ export class TemplateGenerator {
     this.dataDir = path.resolve(this.root, config.dataDir ?? path.join('src', 'data'));
     this.outDir = config.outDir ?? DEFAULT_OUT_DIR;
     this.skipFiles = new Set(config.skipFiles ?? [...DEFAULT_SKIP]);
-    
-    this.markupGenerator = createMarkupGenerator({
-      templatesDir: path.relative(this.root, this.templatesDir),
-      dataDir: path.relative(this.root, this.dataDir),
-      outDir: this.outDir
-    });
   }
 
   find(templateId: string): TemplateCatalogEntry | undefined {
@@ -49,36 +43,54 @@ export class TemplateGenerator {
   }
 
   listTemplateFiles(): string[] {
-    return this.markupGenerator.listTemplateFiles();
+    if (!fs.existsSync(this.templatesDir)) return [];
+    return fs
+      .readdirSync(this.templatesDir)
+      .filter((name) => {
+        if (this.skipFiles.has(name)) return false;
+        if (/LATER\./i.test(name)) return false;
+        return /\.(ts|js)$/.test(name);
+      })
+      .sort();
   }
 
-  async loadPayload(templateId: string, dataPath?: string): Promise<unknown> {
-    return await this.markupGenerator.loadPayload(templateId, dataPath);
+  loadPayload(templateId: string, dataPath?: string): unknown {
+    return loadPayload({
+      templateId,
+      dataPath,
+      catalog: this.catalog,
+      samplePayloads: this.samplePayloads,
+      dataDir: this.dataDir,
+    });
   }
 
-  async render(templateId: string, options: RenderOptions = {}): Promise<string> {
-    const payload = options.payload ?? await this.loadPayload(templateId, options.dataPath);
-    return await this.markupGenerator.render(templateId, { payload });
+  render(templateId: string, options: RenderOptions = {}): string {
+    const payload = options.payload ?? this.loadPayload(templateId, options.dataPath);
+    return renderEntry({
+      templateId,
+      payload,
+      catalog: this.catalog,
+      templatesDir: this.templatesDir,
+      root: this.root,
+    });
   }
 
-  async writeHtml(outPath: string, html: string): Promise<string> {
+  writeHtml(outPath: string, html: string): string {
     const resolvedOutPath = path.resolve(process.cwd(), outPath);
     fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
     fs.writeFileSync(resolvedOutPath, html, 'utf8');
     return resolvedOutPath;
   }
 
-  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
-    return await this.markupGenerator.write(templateId);
+  write(templateId: string, options: WriteOptions = {}): string {
+    const html = this.render(templateId, options);
+    const fileName = `${this.slug(templateId)}.html`;
+    const outPath = options.out || path.join(this.outDir, fileName);
+    return this.writeHtml(outPath, html);
   }
 
-  async writeAll(outDir = this.outDir): Promise<string[]> {
-    const results: string[] = [];
-    for (const entry of this.catalog) {
-      const result = await this.write(entry.ids[0]);
-      results.push(result);
-    }
-    return results;
+  writeAll(outDir = this.outDir): string[] {
+    return this.catalog.map((entry) => this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) }));
   }
 }
 
