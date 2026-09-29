@@ -3,8 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathExists } from 'markup-generator';
 import { listTemplateFiles } from './adapters/list-files';
-import { createGenerator, TemplateGenerator } from './generator';
-import type { CliArgs, GenerateRequest } from './types';
+import { createGenerator } from './create-generator';
+import type { TemplateGenerator } from './engine';
+import type { CliArgs, GenerateRequest } from './engine/types';
 
 export function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
@@ -43,10 +44,11 @@ export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): G
 export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
   const args = parseArgs(argv);
   const gen = generator ?? createGenerator();
-  const templateFiles = listTemplateFiles(gen.templatesDir, { skipFiles: gen.skipFiles });
+  const templatesDir = gen.templatesDir;
+  const templateFiles = templatesDir ? listTemplateFiles(templatesDir, { skipFiles: gen.skipFiles }) : [];
 
   if (args.list) {
-    console.log(`Files in ${path.relative(gen.root, gen.templatesDir) || gen.templatesDir}:`);
+    console.log(`Files in ${templatesDir ? path.relative(gen.root, templatesDir) || templatesDir : '(no templatesDir)'}:`);
     templateFiles.forEach((file) => console.log(`  ${file}`));
     console.log('Generatable templates:');
     if (gen.catalog.length === 0) {
@@ -55,7 +57,7 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
       gen.catalog.forEach((entry) => {
         const exists = entry.render
           ? true
-          : Boolean(entry.file && pathExists(path.join(gen.templatesDir, entry.file)));
+          : Boolean(entry.file && templatesDir && pathExists(path.join(templatesDir, entry.file)));
         const source = entry.render ? 'renderer' : entry.file ?? '(no source)';
         console.log(`  ${entry.ids.join(' | ')}  <- ${source}${exists ? '' : ' (missing)'}`);
       });
@@ -75,7 +77,7 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
   }
 
   const wantAll = args.all === true || !args.template || args.template === 'all';
-  if (wantAll) {
+  if (wantAll && templatesDir) {
     const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
     const extra = templateFiles.filter((file) => !catalogFiles.has(file));
     if (extra.length) {

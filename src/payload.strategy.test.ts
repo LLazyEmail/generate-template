@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createGenerator } from './generator';
-import { loadPayload } from './payload';
+import { createGenerator } from './create-generator';
+import { loadPayload } from './engine/payload';
 
 const tempDirs: string[] = [];
 
@@ -23,7 +23,7 @@ describe('payload strategy', () => {
     expect(await gen.render('welcome')).toBe('Alex');
   });
 
-  it('loads JSON via markup-generator.readJson', async () => {
+  it('loads JSON via markup-generator when dataPath is set', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gt-json-'));
     tempDirs.push(dir);
     const dataPath = path.join(dir, 'custom.json');
@@ -64,8 +64,7 @@ describe('payload strategy', () => {
         templateId: 'test',
         catalog: [{ ids: ['test'], render: () => 'x' }],
         samplePayloads: {},
-        dataDir: '/nonexistent/data/dir',
-        allowMissingDirectories: true,
+        dataDir: '',
       })
     ).rejects.toThrow(/No payload for "test"/);
   });

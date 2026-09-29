@@ -1,6 +1,7 @@
-export { createGenerator, TemplateGenerator, DEFAULT_OUT_DIR } from './generator';
-export { GenerateTemplateError, isGenerateTemplateError } from './errors';
-export type { GenerateTemplateErrorCode } from './errors';
+export { createGenerator } from './create-generator';
+export { TemplateGenerator, DEFAULT_OUT_DIR } from './engine';
+export { GenerateTemplateError, isGenerateTemplateError } from './engine/errors';
+export type { GenerateTemplateErrorCode } from './engine/errors';
 export type {
   GeneratorConfig,
   RenderOptions,
@@ -11,7 +12,7 @@ export type {
   GenerateResult,
   GenerateWriteOptions,
   TemplateCatalogEntry,
-} from './types';
+} from './engine/types';
 
 export {
   writeGeneratedFile,
