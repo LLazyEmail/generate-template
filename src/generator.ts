@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Catalog } from './catalog';
 import { GenerateTemplateError } from './errors';
-import { loadPayload } from './payload';
+import { PayloadSource } from './payload';
 import { renderEntry } from './render';
 import { Writer } from './writer';
 import type {
@@ -28,8 +28,10 @@ export class TemplateGenerator {
   readonly skipFiles: Set<string>;
   readonly allowMissingDirectories: boolean;
   readonly allowFileTemplates: boolean;
+  readonly reviveDates: boolean;
   readonly catalogPort: Catalog;
   readonly writer: Writer;
+  readonly payloads: PayloadSource;
 
   constructor(config: GeneratorConfig = {}) {
     this.catalog = config.catalog ?? [];
@@ -41,8 +43,16 @@ export class TemplateGenerator {
     this.skipFiles = new Set(config.skipFiles ?? [...DEFAULT_SKIP]);
     this.allowMissingDirectories = config.allowMissingDirectories ?? false;
     this.allowFileTemplates = config.allowFileTemplates ?? false;
+    this.reviveDates = config.reviveDates ?? false;
     this.catalogPort = new Catalog(this.catalog);
     this.writer = new Writer(this.outDir);
+    this.payloads = new PayloadSource({
+      catalog: this.catalog,
+      samplePayloads: this.samplePayloads,
+      dataDir: this.dataDir,
+      allowMissingDirectories: this.allowMissingDirectories,
+      loadPayload: config.loadPayload,
+    });
   }
 
   find(templateId: string): TemplateCatalogEntry | undefined {
@@ -75,19 +85,12 @@ export class TemplateGenerator {
     }
   }
 
-  loadPayload(templateId: string, dataPath?: string): unknown {
-    return loadPayload({
-      templateId,
-      dataPath,
-      catalog: this.catalog,
-      samplePayloads: this.samplePayloads,
-      dataDir: this.dataDir,
-      allowMissingDirectories: this.allowMissingDirectories,
-    });
+  loadPayload(templateId: string, dataPath?: string): Promise<unknown> {
+    return this.payloads.load(templateId, dataPath);
   }
 
-  render(templateId: string, options: RenderOptions = {}): string {
-    const payload = options.payload ?? this.loadPayload(templateId, options.dataPath);
+  async render(templateId: string, options: RenderOptions = {}): Promise<string> {
+    const payload = options.payload ?? (await this.loadPayload(templateId, options.dataPath));
     return renderEntry({
       templateId,
       payload,
@@ -95,6 +98,7 @@ export class TemplateGenerator {
       templatesDir: this.templatesDir,
       root: this.root,
       allowFileTemplates: this.allowFileTemplates,
+      reviveDates: options.reviveDates ?? this.reviveDates,
     });
   }
 
@@ -102,8 +106,8 @@ export class TemplateGenerator {
     return this.writer.writeFile(outPath, html, templateId);
   }
 
-  write(templateId: string, options: WriteOptions = {}): Promise<string> {
-    const html = this.render(templateId, options);
+  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
+    const html = await this.render(templateId, options);
     return this.writer.writeNamed({
       templateId,
       html,
@@ -122,9 +126,10 @@ export class TemplateGenerator {
   }
 
   async run(request: GenerateRequest): Promise<GenerateResult> {
-    const html = this.render(request.templateId, {
+    const html = await this.render(request.templateId, {
       payload: request.payload,
       dataPath: request.dataPath,
+      reviveDates: request.reviveDates,
     });
     const result: GenerateResult = {
       templateId: request.templateId,
@@ -135,6 +140,7 @@ export class TemplateGenerator {
       result.path = await this.write(request.templateId, {
         payload: request.payload,
         dataPath: request.dataPath,
+        reviveDates: request.reviveDates,
         out: writeOpts.out,
         uniqueName: writeOpts.uniqueName,
       });

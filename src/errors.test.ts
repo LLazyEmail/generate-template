@@ -3,13 +3,13 @@ import { createGenerator } from './generator';
 import { GenerateTemplateError, isGenerateTemplateError } from './errors';
 
 describe('GenerateTemplateError', () => {
-  it('tags unknown template ids', () => {
+  it('tags unknown template ids', async () => {
     const gen = createGenerator({
       catalog: [{ ids: ['only'], render: () => 'x' }],
     });
 
     try {
-      gen.render('welcome', { payload: {} });
+      await gen.render('welcome', { payload: {} });
       throw new Error('expected throw');
     } catch (error) {
       expect(isGenerateTemplateError(error)).toBe(true);
@@ -18,14 +18,14 @@ describe('GenerateTemplateError', () => {
     }
   });
 
-  it('tags missing payloads', () => {
+  it('tags missing payloads', async () => {
     const gen = createGenerator({
       catalog: [{ ids: ['only'], render: () => 'x' }],
       allowMissingDirectories: true,
     });
 
     try {
-      gen.loadPayload('only');
+      await gen.loadPayload('only');
       throw new Error('expected throw');
     } catch (error) {
       expect(isGenerateTemplateError(error)).toBe(true);

@@ -8,15 +8,24 @@ import type { TemplateCatalogEntry } from './types';
 export { invokeRenderer } from './render/in-process';
 export { renderFromFile } from './render/file-adapter';
 
-export function renderEntry(options: {
+export async function renderEntry(options: {
   templateId: string;
   payload: unknown;
   catalog: TemplateCatalogEntry[];
   templatesDir: string;
   root: string;
   allowFileTemplates?: boolean;
-}): string {
-  const { templateId, payload, catalog, templatesDir, root, allowFileTemplates = false } = options;
+  reviveDates?: boolean;
+}): Promise<string> {
+  const {
+    templateId,
+    payload,
+    catalog,
+    templatesDir,
+    root,
+    allowFileTemplates = false,
+    reviveDates: shouldRevive = false,
+  } = options;
   const entry = findEntry(catalog, templateId);
   if (!entry) {
     throw new GenerateTemplateError(
@@ -28,7 +37,7 @@ export function renderEntry(options: {
 
   const ctx = {
     templateId,
-    payload: reviveDates(payload),
+    payload: shouldRevive ? reviveDates(payload) : payload,
     entry,
     templatesDir,
     root,

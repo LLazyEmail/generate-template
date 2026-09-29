@@ -2,28 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { createGenerator } from './generator';
 import { GenerateTemplateError } from './errors';
 
-/**
- * Documents the break for sibling LLazyEmail repos that still pass
- * `{ ids, file, exportName }` without an injected render function.
- */
 describe('migration for other repositories', () => {
-  it('old file-only catalog no longer renders by default', () => {
+  it('old file-only catalog no longer renders by default', async () => {
     const gen = createGenerator({
       catalog: [{ ids: ['welcome'], file: 'welcomeEmail.ts', exportName: 'WelcomeEmail' }],
       samplePayloads: { welcome: { name: 'Alex' } },
     });
 
-    expect(() => gen.render('welcome')).toThrow(GenerateTemplateError);
-    expect(() => gen.render('welcome')).toThrow(/allowFileTemplates/);
+    await expect(gen.render('welcome')).rejects.toThrow(GenerateTemplateError);
+    await expect(gen.render('welcome')).rejects.toThrow(/allowFileTemplates/);
   });
 
-  it('fix A: inject the template function (preferred)', () => {
+  it('fix A: inject the template function (preferred)', async () => {
     const WelcomeEmail = (p: unknown) => `<p>${(p as { name: string }).name}</p>`;
     const gen = createGenerator({
       catalog: [{ ids: ['welcome'], render: WelcomeEmail }],
       samplePayloads: { welcome: { name: 'Alex' } },
     });
-    expect(gen.render('welcome')).toBe('<p>Alex</p>');
+    expect(await gen.render('welcome')).toBe('<p>Alex</p>');
   });
 
   it('fix B: keep files, opt into the adapter', () => {
