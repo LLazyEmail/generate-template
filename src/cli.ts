@@ -25,7 +25,7 @@ export function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-export function main(argv = process.argv.slice(2), generator?: TemplateGenerator): void {
+export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
   const args = parseArgs(argv);
   const gen = generator ?? createGenerator();
   const templateFiles = gen.listTemplateFiles();
@@ -35,7 +35,7 @@ export function main(argv = process.argv.slice(2), generator?: TemplateGenerator
     templateFiles.forEach((file) => console.log(`  ${file}`));
     console.log('Generatable templates:');
     if (gen.catalog.length === 0) {
-      console.log('  (No catalog configured - use createGenerator() with catalog option)');
+      console.log('  (No catalog configured — pass createGenerator({ catalog }) from your project)');
     } else {
       gen.catalog.forEach((entry) => {
         const exists = entry.render ? true : Boolean(entry.file && fs.existsSync(path.join(gen.templatesDir, entry.file)));
@@ -47,22 +47,23 @@ export function main(argv = process.argv.slice(2), generator?: TemplateGenerator
   }
 
   if (gen.catalog.length === 0) {
-    console.error('Error: No catalog configured. Use createGenerator() with catalog option.');
-    process.exit(1);
+    console.error('Error: No catalog configured. Use createGenerator({ catalog }) from your project.');
+    process.exitCode = 1;
+    return;
   }
 
   const wantAll = args.all === true || !args.template || args.template === 'all';
   const targets = wantAll ? gen.catalog.map((entry) => entry.ids[0]) : [args.template as string];
 
-  targets.forEach((templateId) => {
-    const written = gen.write(templateId, {
+  for (const templateId of targets) {
+    const written = await gen.write(templateId, {
       dataPath: wantAll ? undefined : args.data,
       out: wantAll
         ? path.join(args.out || gen.outDir, `${gen.slug(templateId)}.html`)
         : args.out || path.join(gen.outDir, `${gen.slug(templateId)}.html`),
     });
     console.log(written);
-  });
+  }
 
   if (wantAll) {
     const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
@@ -78,5 +79,8 @@ const invokedAsCli =
   typeof process.argv[1] === 'string' && path.resolve(process.argv[1]) === thisFile;
 
 if (invokedAsCli) {
-  main();
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
 }

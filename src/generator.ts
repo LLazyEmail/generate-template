@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { generateFileName, writeGeneratedEmail, writeGeneratedFile } from 'markup-generator';
 import { findEntry, slugFromId } from './resolve';
 import { loadPayload } from './payload';
 import { renderEntry } from './render';
@@ -50,7 +51,7 @@ export class TemplateGenerator {
     try {
       return fs
         .readdirSync(this.templatesDir)
-        .filter((name) => {
+        .filter((name: string) => {
           if (this.skipFiles.has(name)) return false;
           if (/LATER\./i.test(name)) return false;
           return /\.(ts|js)$/.test(name);
@@ -86,22 +87,50 @@ export class TemplateGenerator {
     });
   }
 
-  writeHtml(outPath: string, html: string): string {
+  async writeHtml(outPath: string, html: string): Promise<string> {
     const resolvedOutPath = path.resolve(process.cwd(), outPath);
-    fs.mkdirSync(path.dirname(resolvedOutPath), { recursive: true });
-    fs.writeFileSync(resolvedOutPath, html, 'utf8');
-    return resolvedOutPath;
+    return writeGeneratedFile({
+      content: html,
+      fileName: path.basename(resolvedOutPath),
+      dir: path.dirname(resolvedOutPath),
+    });
   }
 
-  write(templateId: string, options: WriteOptions = {}): string {
+  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
     const html = this.render(templateId, options);
-    const fileName = `${this.slug(templateId)}.html`;
-    const outPath = options.out || path.join(this.outDir, fileName);
-    return this.writeHtml(outPath, html);
+    const stableName = `${this.slug(templateId)}.html`;
+    const fileName = options.uniqueName ? generateFileName(this.slug(templateId), 'html') : stableName;
+
+    if (options.out) {
+      const resolved = path.resolve(process.cwd(), options.out);
+      const looksLikeFile = path.extname(resolved) !== '';
+      const dir = looksLikeFile ? path.dirname(resolved) : resolved;
+      const name = looksLikeFile ? path.basename(resolved) : fileName;
+      return writeGeneratedFile({
+        content: html,
+        fileName: name,
+        dir,
+      });
+    }
+
+    const written = await writeGeneratedEmail({
+      content: html,
+      fileName,
+      label: templateId,
+      dir: this.outDir,
+    });
+    if (!written) {
+      throw new Error(`Failed to write ${fileName}`);
+    }
+    return written;
   }
 
-  writeAll(outDir = this.outDir): string[] {
-    return this.catalog.map((entry) => this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) }));
+  async writeAll(outDir = this.outDir): Promise<string[]> {
+    const paths: string[] = [];
+    for (const entry of this.catalog) {
+      paths.push(await this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) }));
+    }
+    return paths;
   }
 }
 
@@ -109,8 +138,6 @@ export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator
   return new TemplateGenerator(config);
 }
 
-// Lazy initialization for default generator instance
-// This is used by the compatibility layer to avoid issues with missing directories during import
 let _defaultGenerator: TemplateGenerator | null = null;
 
 export function getDefaultGenerator(): TemplateGenerator {
