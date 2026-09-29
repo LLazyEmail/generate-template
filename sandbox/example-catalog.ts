@@ -1,49 +1,40 @@
-/**
- * Example catalog and sample payloads for testing/demonstration.
- * This shows how to structure a catalog for the generate-template library.
- * 
- * In a real project, you would:
- * 1. Define your own catalog with your template files
- * 2. Create sample payloads for testing
- * 3. Pass these to createGenerator() when initializing
- */
 import type { TemplateCatalogEntry } from '../src/types';
+import { passwordReset } from './templates/password-reset.definition';
+import { orderConfirmation } from './templates/order-confirmation.definition';
+import { WelcomeEmail } from './templates/welcomeEmail';
+import { InvoiceEmail } from './templates/invoiceEmail';
+import { TrialExpiringEmail } from './templates/trialExpiringEmail';
+import { UserInvitationEmail } from './templates/userInvitationEmail';
 
 export const EXAMPLE_CATALOG: TemplateCatalogEntry[] = [
   {
     ids: ['password-reset', 'PasswordResetEmail'],
-    file: 'password-reset.definition.ts',
-    exportName: 'passwordReset',
+    render: passwordReset,
     description: 'Password reset email',
   },
   {
     ids: ['order-confirmation', 'OrderConfirmationEmail'],
-    file: 'order-confirmation.definition.ts',
-    exportName: 'orderConfirmation',
+    render: orderConfirmation,
     description: 'Order confirmation email',
   },
   {
-    ids: ['WelcomeEmail', 'welcome'],
-    file: 'welcomeEmail.ts',
-    exportName: 'WelcomeEmail',
+    ids: ['welcome', 'WelcomeEmail'],
+    render: WelcomeEmail,
     description: 'Welcome email for new users',
   },
   {
-    ids: ['InvoiceEmail', 'invoice'],
-    file: 'invoiceEmail.ts',
-    exportName: 'InvoiceEmail',
+    ids: ['invoice', 'InvoiceEmail'],
+    render: InvoiceEmail,
     description: 'Invoice email',
   },
   {
-    ids: ['TrialExpiringEmail', 'trial-expiring'],
-    file: 'trialExpiringEmail.ts',
-    exportName: 'TrialExpiringEmail',
+    ids: ['trial-expiring', 'TrialExpiringEmail'],
+    render: TrialExpiringEmail,
     description: 'Trial expiration reminder',
   },
   {
-    ids: ['UserInvitationEmail', 'user-invitation'],
-    file: 'userInvitationEmail.ts',
-    exportName: 'UserInvitationEmail',
+    ids: ['user-invitation', 'UserInvitationEmail'],
+    render: UserInvitationEmail,
     description: 'User invitation email',
   },
 ];
@@ -81,7 +72,7 @@ export const EXAMPLE_SAMPLE_PAYLOADS: Record<string, unknown> = {
     company_suite: 'Suite 1234',
     company_url: 'https://example.com',
   },
-  WelcomeEmail: {
+  welcome: {
     userName: 'Alex',
     signupDate: new Date('2026-01-05T12:00:00Z'),
     preheader: 'Welcome aboard.',
@@ -94,7 +85,7 @@ export const EXAMPLE_SAMPLE_PAYLOADS: Record<string, unknown> = {
     company_suite: 'Suite 1234',
     company_url: 'https://example.com',
   },
-  InvoiceEmail: {
+  invoice: {
     name: 'Alex',
     preheader: 'Invoice for Jan 5, 2026.',
     invoice_id: 'INV-2026-0001',
@@ -111,7 +102,7 @@ export const EXAMPLE_SAMPLE_PAYLOADS: Record<string, unknown> = {
     company_suite: 'Suite 1234',
     company_url: 'https://example.com',
   },
-  TrialExpiringEmail: {
+  'trial-expiring': {
     name: 'Alex',
     preheader: 'Your Pro trial ends in 3 days.',
     trial_end_date: 'January 19, 2026',
@@ -128,7 +119,7 @@ export const EXAMPLE_SAMPLE_PAYLOADS: Record<string, unknown> = {
     company_suite: 'Suite 1234',
     company_url: 'https://example.com',
   },
-  UserInvitationEmail: {
+  'user-invitation': {
     invitee_name: 'Alex',
     invitee_email: 'alex@example.com',
     inviter_name: 'Sam',
@@ -149,7 +140,7 @@ export const EXAMPLE_SAMPLE_PAYLOADS: Record<string, unknown> = {
 
 EXAMPLE_SAMPLE_PAYLOADS.PasswordResetEmail = EXAMPLE_SAMPLE_PAYLOADS['password-reset'];
 EXAMPLE_SAMPLE_PAYLOADS.OrderConfirmationEmail = EXAMPLE_SAMPLE_PAYLOADS['order-confirmation'];
-EXAMPLE_SAMPLE_PAYLOADS.welcome = EXAMPLE_SAMPLE_PAYLOADS.WelcomeEmail;
-EXAMPLE_SAMPLE_PAYLOADS.invoice = EXAMPLE_SAMPLE_PAYLOADS.InvoiceEmail;
-EXAMPLE_SAMPLE_PAYLOADS['trial-expiring'] = EXAMPLE_SAMPLE_PAYLOADS.TrialExpiringEmail;
-EXAMPLE_SAMPLE_PAYLOADS['user-invitation'] = EXAMPLE_SAMPLE_PAYLOADS.UserInvitationEmail;
+EXAMPLE_SAMPLE_PAYLOADS.WelcomeEmail = EXAMPLE_SAMPLE_PAYLOADS.welcome;
+EXAMPLE_SAMPLE_PAYLOADS.InvoiceEmail = EXAMPLE_SAMPLE_PAYLOADS.invoice;
+EXAMPLE_SAMPLE_PAYLOADS.TrialExpiringEmail = EXAMPLE_SAMPLE_PAYLOADS['trial-expiring'];
+EXAMPLE_SAMPLE_PAYLOADS.UserInvitationEmail = EXAMPLE_SAMPLE_PAYLOADS['user-invitation'];
