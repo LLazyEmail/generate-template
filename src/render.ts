@@ -2,14 +2,15 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { GenerateTemplateError } from './errors';
 import type { TemplateCatalogEntry, TemplateRenderer } from './types';
 import { availableIds, findEntry } from './resolve';
 import { reviveDates, serializePayload } from './payload';
 
-export function invokeRenderer(renderer: TemplateRenderer, payload: unknown): string {
+export function invokeRenderer(renderer: TemplateRenderer, payload: unknown, templateId?: string): string {
   const html = typeof renderer === 'function' ? renderer(payload) : renderer.render(payload);
   if (typeof html !== 'string') {
-    throw new Error('Template renderer must return a string');
+    throw new GenerateTemplateError('RENDER_FAILED', 'Template renderer must return a string', templateId);
   }
   return html;
 }
@@ -24,25 +25,43 @@ export function renderEntry(options: {
   const { templateId, payload, catalog, templatesDir, root } = options;
   const entry = findEntry(catalog, templateId);
   if (!entry) {
-    throw new Error(`Unknown template id: "${templateId}". Available: ${availableIds(catalog).join(', ')}`);
+    throw new GenerateTemplateError(
+      'UNKNOWN_TEMPLATE',
+      `Unknown template id: "${templateId}". Available: ${availableIds(catalog).join(', ')}`,
+      templateId
+    );
   }
 
   const revived = reviveDates(payload);
 
   if (entry.render) {
-    return invokeRenderer(entry.render, revived);
+    return invokeRenderer(entry.render, revived, templateId);
   }
 
   if (!entry.file) {
-    throw new Error(`Template "${templateId}" has no render function or file`);
+    throw new GenerateTemplateError(
+      'RENDER_FAILED',
+      `Template "${templateId}" has no render function or file`,
+      templateId
+    );
   }
 
   const modulePath = path.join(templatesDir, entry.file);
   if (!fs.existsSync(modulePath)) {
-    throw new Error(`Template file missing: ${path.relative(root, modulePath)}`);
+    throw new GenerateTemplateError(
+      'RENDER_FAILED',
+      `Template file missing: ${path.relative(root, modulePath)}`,
+      templateId
+    );
   }
 
-  return renderFromFile(modulePath, entry.exportName ?? 'default', revived, root);
+  try {
+    return renderFromFile(modulePath, entry.exportName ?? 'default', revived, root);
+  } catch (error) {
+    if (error instanceof GenerateTemplateError) throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    throw new GenerateTemplateError('RENDER_FAILED', message, templateId);
+  }
 }
 
 function renderFromFile(modulePath: string, exportName: string, payload: unknown, root: string): string {

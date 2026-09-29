@@ -28,8 +28,27 @@ export interface RenderOptions {
 
 export interface WriteOptions extends RenderOptions {
   out?: string;
-  /** When true, filename is `{slug}-{uuid}.html` via markup-generator.generateFileName */
   uniqueName?: boolean;
+}
+
+export interface GenerateWriteOptions {
+  out?: string;
+  uniqueName?: boolean;
+}
+
+/** Low-level request the engine (and a future HTTP layer) accept. */
+export interface GenerateRequest {
+  templateId: string;
+  payload?: unknown;
+  dataPath?: string;
+  write?: boolean | GenerateWriteOptions;
+}
+
+/** Low-level result the engine returns. */
+export interface GenerateResult {
+  templateId: string;
+  html: string;
+  path?: string;
 }
 
 export interface CliArgs {

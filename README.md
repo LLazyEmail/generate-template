@@ -28,7 +28,7 @@ npm install github:LLazyEmail/generate-template#main
 ## Use it from another project
 
 ```ts
-import { createGenerator } from '@llazyemail/generate-template';
+import { createGenerator, GenerateTemplateError } from '@llazyemail/generate-template';
 import { WelcomeEmail } from './emails/welcome';
 
 const generate = createGenerator({
@@ -46,9 +46,19 @@ const generate = createGenerator({
 
 const html = generate.render('welcome');
 const file = await generate.write('welcome');
+
+// Low-level contract (future HTTP/API seam)
+const result = await generate.run({
+  templateId: 'welcome',
+  payload: { name: 'Alex' },
+});
+// result.html — no disk write unless write: true | { out }
 ```
 
-`write()` and `writeAll()` are async. They call `writeGeneratedFile` / `writeGeneratedEmail` from `markup-generator` (mkdir, UTF-8, typed errors). Pass `{ uniqueName: true }` if you want `{slug}-{uuid}.html`.
+Failures are `GenerateTemplateError` with a `code`:
+`UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG`.
+
+`write()` and `writeAll()` are async. They call `writeGeneratedFile` / `writeGeneratedEmail` from `markup-generator`. Pass `{ uniqueName: true }` if you want `{slug}-{uuid}.html`.
 
 Same helpers are re-exported if you need them directly:
 

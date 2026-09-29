@@ -1,10 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { generateFileName, writeGeneratedEmail, writeGeneratedFile } from 'markup-generator';
+import { generateFileName, MarkupGeneratorError, writeGeneratedEmail, writeGeneratedFile } from 'markup-generator';
+import { GenerateTemplateError } from './errors';
 import { findEntry, slugFromId } from './resolve';
 import { loadPayload } from './payload';
 import { renderEntry } from './render';
 import type {
+  GenerateRequest,
+  GenerateResult,
   GeneratorConfig,
   RenderOptions,
   TemplateCatalogEntry,
@@ -58,10 +61,11 @@ export class TemplateGenerator {
         })
         .sort();
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to read templates directory ${this.templatesDir}: ${error.message}`);
-      }
-      throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      throw new GenerateTemplateError(
+        'INVALID_CONFIG',
+        `Failed to read templates directory ${this.templatesDir}: ${message}`
+      );
     }
   }
 
@@ -87,13 +91,17 @@ export class TemplateGenerator {
     });
   }
 
-  async writeHtml(outPath: string, html: string): Promise<string> {
-    const resolvedOutPath = path.resolve(process.cwd(), outPath);
-    return writeGeneratedFile({
-      content: html,
-      fileName: path.basename(resolvedOutPath),
-      dir: path.dirname(resolvedOutPath),
-    });
+  async writeHtml(outPath: string, html: string, templateId?: string): Promise<string> {
+    try {
+      const resolvedOutPath = path.resolve(process.cwd(), outPath);
+      return await writeGeneratedFile({
+        content: html,
+        fileName: path.basename(resolvedOutPath),
+        dir: path.dirname(resolvedOutPath),
+      });
+    } catch (error) {
+      throw wrapWriteError(error, templateId);
+    }
   }
 
   async write(templateId: string, options: WriteOptions = {}): Promise<string> {
@@ -101,28 +109,32 @@ export class TemplateGenerator {
     const stableName = `${this.slug(templateId)}.html`;
     const fileName = options.uniqueName ? generateFileName(this.slug(templateId), 'html') : stableName;
 
-    if (options.out) {
-      const resolved = path.resolve(process.cwd(), options.out);
-      const looksLikeFile = path.extname(resolved) !== '';
-      const dir = looksLikeFile ? path.dirname(resolved) : resolved;
-      const name = looksLikeFile ? path.basename(resolved) : fileName;
-      return writeGeneratedFile({
-        content: html,
-        fileName: name,
-        dir,
-      });
-    }
+    try {
+      if (options.out) {
+        const resolved = path.resolve(process.cwd(), options.out);
+        const looksLikeFile = path.extname(resolved) !== '';
+        const dir = looksLikeFile ? path.dirname(resolved) : resolved;
+        const name = looksLikeFile ? path.basename(resolved) : fileName;
+        return await writeGeneratedFile({
+          content: html,
+          fileName: name,
+          dir,
+        });
+      }
 
-    const written = await writeGeneratedEmail({
-      content: html,
-      fileName,
-      label: templateId,
-      dir: this.outDir,
-    });
-    if (!written) {
-      throw new Error(`Failed to write ${fileName}`);
+      const written = await writeGeneratedEmail({
+        content: html,
+        fileName,
+        label: templateId,
+        dir: this.outDir,
+      });
+      if (!written) {
+        throw new GenerateTemplateError('WRITE_FAILED', `Failed to write ${fileName}`, templateId);
+      }
+      return written;
+    } catch (error) {
+      throw wrapWriteError(error, templateId);
     }
-    return written;
   }
 
   async writeAll(outDir = this.outDir): Promise<string[]> {
@@ -132,21 +144,38 @@ export class TemplateGenerator {
     }
     return paths;
   }
+
+  async run(request: GenerateRequest): Promise<GenerateResult> {
+    const html = this.render(request.templateId, {
+      payload: request.payload,
+      dataPath: request.dataPath,
+    });
+    const result: GenerateResult = {
+      templateId: request.templateId,
+      html,
+    };
+    if (request.write) {
+      const writeOpts = request.write === true ? {} : request.write;
+      result.path = await this.write(request.templateId, {
+        payload: request.payload,
+        dataPath: request.dataPath,
+        out: writeOpts.out,
+        uniqueName: writeOpts.uniqueName,
+      });
+    }
+    return result;
+  }
 }
 
 export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {
   return new TemplateGenerator(config);
 }
 
-let _defaultGenerator: TemplateGenerator | null = null;
-
-export function getDefaultGenerator(): TemplateGenerator {
-  if (!_defaultGenerator) {
-    _defaultGenerator = createGenerator();
+function wrapWriteError(error: unknown, templateId?: string): GenerateTemplateError {
+  if (error instanceof GenerateTemplateError) return error;
+  if (error instanceof MarkupGeneratorError) {
+    return new GenerateTemplateError('WRITE_FAILED', `${error.code}: ${error.message}`, templateId);
   }
-  return _defaultGenerator;
-}
-
-export function resetDefaultGenerator(): void {
-  _defaultGenerator = null;
+  const message = error instanceof Error ? error.message : String(error);
+  return new GenerateTemplateError('WRITE_FAILED', message, templateId);
 }
