@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGenerator, TemplateGenerator } from './generator';
-import type { CliArgs } from './types';
+import type { CliArgs, GenerateRequest } from './types';
 
 export function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
@@ -23,6 +23,20 @@ export function parseArgs(argv: string[]): CliArgs {
     }
   });
   return args;
+}
+
+export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): GenerateRequest[] {
+  const wantAll = args.all === true || !args.template || args.template === 'all';
+  const targets = wantAll ? generator.catalog.map((entry) => entry.ids[0]) : [args.template as string];
+  return targets.map((templateId) => ({
+    templateId,
+    dataPath: wantAll ? undefined : args.data,
+    write: {
+      out: wantAll
+        ? path.join(args.out || generator.outDir, `${generator.slug(templateId)}.html`)
+        : args.out || path.join(generator.outDir, `${generator.slug(templateId)}.html`),
+    },
+  }));
 }
 
 export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
@@ -52,19 +66,12 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
     return;
   }
 
-  const wantAll = args.all === true || !args.template || args.template === 'all';
-  const targets = wantAll ? gen.catalog.map((entry) => entry.ids[0]) : [args.template as string];
-
-  for (const templateId of targets) {
-    const written = await gen.write(templateId, {
-      dataPath: wantAll ? undefined : args.data,
-      out: wantAll
-        ? path.join(args.out || gen.outDir, `${gen.slug(templateId)}.html`)
-        : args.out || path.join(gen.outDir, `${gen.slug(templateId)}.html`),
-    });
-    console.log(written);
+  for (const request of requestsFromArgs(args, gen)) {
+    const result = await gen.run(request);
+    if (result.path) console.log(result.path);
   }
 
+  const wantAll = args.all === true || !args.template || args.template === 'all';
   if (wantAll) {
     const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
     const extra = templateFiles.filter((file) => !catalogFiles.has(file));

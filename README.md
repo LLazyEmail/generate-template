@@ -7,62 +7,39 @@ Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://
 
 Current version: **0.2.0**. Hosted on GitHub Packages only (not npmjs).
 
-## Install
-
-```ini
-@llazyemail:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-```bash
-npm install @llazyemail/generate-template
-# or until Packages is published:
-npm install github:LLazyEmail/generate-template#main
-```
-
-## Use it from another project
-
-Preferred: inject a `render` function. That is the core path.
+## Public API
 
 ```ts
-import { createGenerator, GenerateTemplateError } from '@llazyemail/generate-template';
-import { WelcomeEmail } from './emails/welcome';
+import {
+  createGenerator,
+  GenerateTemplateError,
+  type GenerateRequest,
+  type GenerateResult,
+} from '@llazyemail/generate-template';
 
 const generate = createGenerator({
-  catalog: [{ ids: ['welcome', 'WelcomeEmail'], render: WelcomeEmail }],
+  catalog: [{ ids: ['welcome'], render: (p) => `<p>${(p as { name: string }).name}</p>` }],
   samplePayloads: { welcome: { name: 'Alex' } },
-  outDir: 'generated',
 });
 
-const html = generate.render('welcome');
-const file = await generate.write('welcome');
+const html = await generate.render('welcome');
 const result = await generate.run({ templateId: 'welcome', payload: { name: 'Alex' } });
 ```
 
-Failures are `GenerateTemplateError` with `code`:
+`run(request)` is the contract a future HTTP handler wraps. Failures are `GenerateTemplateError` with `code`:
 `UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG`.
 
-### Breaking: file catalog entries
+`render` / `loadPayload` are async. File catalog entries need `allowFileTemplates: true` (prefer injected `render`).
 
-`{ file, exportName }` no longer renders unless you opt in. Child-process spawn is an adapter, not core.
-
-```ts
-const generate = createGenerator({
-  catalog: [{ ids: ['welcome'], file: 'welcomeEmail.ts', exportName: 'WelcomeEmail' }],
-  templatesDir: 'src/templates',
-  allowFileTemplates: true,
-});
-```
-
-Without that flag you get `RENDER_FAILED`. Fix sibling repos by injecting `render` (preferred) or setting `allowFileTemplates: true`.
+Date revival is off unless `reviveDates: true`.
 
 ## CLI
 
-```ts
-import { main, createGenerator } from '@llazyemail/generate-template';
-import { catalog, samplePayloads } from './emails/catalog';
+The CLI is an adapter over `run()`. Drive it from your project — it is not a package export.
 
-await main(process.argv.slice(2), createGenerator({ catalog, samplePayloads }));
+```ts
+import { createGenerator } from '@llazyemail/generate-template';
+// bin: generate-template --template=welcome --out=generated/welcome.html
 ```
 
 ## Scripts
