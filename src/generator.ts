@@ -1,7 +1,6 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { Catalog } from './catalog';
-import { GenerateTemplateError } from './errors';
+import { listTemplateFiles as listTemplateFilesOnDisk } from './adapters/list-files';
 import { PayloadSource } from './payload';
 import { renderEntry } from './render';
 import { Writer } from './writer';
@@ -29,6 +28,7 @@ export class TemplateGenerator {
   readonly allowMissingDirectories: boolean;
   readonly allowFileTemplates: boolean;
   readonly reviveDates: boolean;
+  readonly useDataFiles: boolean;
   readonly catalogPort: Catalog;
   readonly writer: Writer;
   readonly payloads: PayloadSource;
@@ -37,20 +37,25 @@ export class TemplateGenerator {
     this.catalog = config.catalog ?? [];
     this.samplePayloads = config.samplePayloads ?? {};
     this.root = path.resolve(config.root ?? process.cwd());
-    this.templatesDir = path.resolve(this.root, config.templatesDir ?? path.join('src', 'templates'));
-    this.dataDir = path.resolve(this.root, config.dataDir ?? path.join('src', 'data'));
+    this.templatesDir = config.templatesDir
+      ? path.resolve(this.root, config.templatesDir)
+      : path.resolve(this.root, 'src', 'templates');
+    this.dataDir = config.dataDir
+      ? path.resolve(this.root, config.dataDir)
+      : path.resolve(this.root, 'src', 'data');
     this.outDir = config.outDir ?? DEFAULT_OUT_DIR;
     this.skipFiles = new Set(config.skipFiles ?? [...DEFAULT_SKIP]);
     this.allowMissingDirectories = config.allowMissingDirectories ?? false;
     this.allowFileTemplates = config.allowFileTemplates ?? false;
     this.reviveDates = config.reviveDates ?? false;
+    this.useDataFiles = config.useDataFiles ?? false;
     this.catalogPort = new Catalog(this.catalog);
     this.writer = new Writer(this.outDir);
     this.payloads = new PayloadSource({
       catalog: this.catalog,
       samplePayloads: this.samplePayloads,
       dataDir: this.dataDir,
-      allowMissingDirectories: this.allowMissingDirectories,
+      useDataFiles: this.useDataFiles,
       loadPayload: config.loadPayload,
     });
   }
@@ -64,25 +69,7 @@ export class TemplateGenerator {
   }
 
   listTemplateFiles(): string[] {
-    if (!fs.existsSync(this.templatesDir)) {
-      return [];
-    }
-    try {
-      return fs
-        .readdirSync(this.templatesDir)
-        .filter((name: string) => {
-          if (this.skipFiles.has(name)) return false;
-          if (/LATER\./i.test(name)) return false;
-          return /\.(ts|js)$/.test(name);
-        })
-        .sort();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new GenerateTemplateError(
-        'INVALID_CONFIG',
-        `Failed to read templates directory ${this.templatesDir}: ${message}`
-      );
-    }
+    return listTemplateFilesOnDisk(this.templatesDir, { skipFiles: this.skipFiles });
   }
 
   loadPayload(templateId: string, dataPath?: string): Promise<unknown> {
