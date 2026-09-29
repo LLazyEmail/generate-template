@@ -19,6 +19,11 @@ export interface GeneratorConfig {
   outDir?: string;
   skipFiles?: string[];
   allowMissingDirectories?: boolean;
+  /**
+   * When true, catalog `file` entries are loaded via a child Node process.
+   * Default false. Other repos that still use `file` + `exportName` must set this.
+   */
+  allowFileTemplates?: boolean;
 }
 
 export interface RenderOptions {
@@ -36,7 +41,6 @@ export interface GenerateWriteOptions {
   uniqueName?: boolean;
 }
 
-/** Low-level request the engine (and a future HTTP layer) accept. */
 export interface GenerateRequest {
   templateId: string;
   payload?: unknown;
@@ -44,7 +48,6 @@ export interface GenerateRequest {
   write?: boolean | GenerateWriteOptions;
 }
 
-/** Low-level result the engine returns. */
 export interface GenerateResult {
   templateId: string;
   html: string;
@@ -57,4 +60,12 @@ export interface CliArgs {
   template?: string;
   data?: string;
   out?: string;
+}
+
+export interface RenderContext {
+  templateId: string;
+  payload: unknown;
+  entry: TemplateCatalogEntry;
+  templatesDir: string;
+  root: string;
 }
