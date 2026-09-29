@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Writer } from './writer';
-import { GenerateTemplateError } from '../errors';
+import { GenerateTemplateError } from '../engine/errors';
 
 const tempDirs: string[] = [];
 

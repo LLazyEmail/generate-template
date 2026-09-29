@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathExists } from 'markup-generator';
-import { GenerateTemplateError } from '../errors';
-import { serializePayload } from '../payload';
-import type { RenderContext } from '../types';
+import { GenerateTemplateError } from '../engine/errors';
+import { serializePayload } from '../engine/payload';
+import type { RenderContext } from '../engine/types';
 
 /** Opt-in spawn path. Engine must not import this unless allowFileTemplates. */
 export function renderFromFile(ctx: RenderContext): string {

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { generateFileName, MarkupGeneratorError, writeGeneratedEmail, writeGeneratedFile } from 'markup-generator';
-import { GenerateTemplateError } from '../errors';
+import { GenerateTemplateError } from '../engine/errors';
 
 export class Writer {
   constructor(readonly outDir: string) {}

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createGenerator } from './generator';
+import { createGenerator } from './create-generator';
 import { parseArgs, requestsFromArgs, main } from './cli';
 
 const tempDirs: string[] = [];
