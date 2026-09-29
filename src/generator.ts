@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { generateFileName, MarkupGeneratorError, writeGeneratedEmail, writeGeneratedFile } from 'markup-generator';
+import { Catalog } from './catalog';
 import { GenerateTemplateError } from './errors';
-import { findEntry, slugFromId } from './resolve';
 import { loadPayload } from './payload';
 import { renderEntry } from './render';
+import { Writer } from './writer';
 import type {
   GenerateRequest,
   GenerateResult,
@@ -27,6 +27,9 @@ export class TemplateGenerator {
   readonly outDir: string;
   readonly skipFiles: Set<string>;
   readonly allowMissingDirectories: boolean;
+  readonly allowFileTemplates: boolean;
+  readonly catalogPort: Catalog;
+  readonly writer: Writer;
 
   constructor(config: GeneratorConfig = {}) {
     this.catalog = config.catalog ?? [];
@@ -37,14 +40,17 @@ export class TemplateGenerator {
     this.outDir = config.outDir ?? DEFAULT_OUT_DIR;
     this.skipFiles = new Set(config.skipFiles ?? [...DEFAULT_SKIP]);
     this.allowMissingDirectories = config.allowMissingDirectories ?? false;
+    this.allowFileTemplates = config.allowFileTemplates ?? false;
+    this.catalogPort = new Catalog(this.catalog);
+    this.writer = new Writer(this.outDir);
   }
 
   find(templateId: string): TemplateCatalogEntry | undefined {
-    return findEntry(this.catalog, templateId);
+    return this.catalogPort.find(templateId);
   }
 
   slug(templateId: string): string {
-    return slugFromId(this.catalog, templateId);
+    return this.catalogPort.slug(templateId);
   }
 
   listTemplateFiles(): string[] {
@@ -88,53 +94,23 @@ export class TemplateGenerator {
       catalog: this.catalog,
       templatesDir: this.templatesDir,
       root: this.root,
+      allowFileTemplates: this.allowFileTemplates,
     });
   }
 
-  async writeHtml(outPath: string, html: string, templateId?: string): Promise<string> {
-    try {
-      const resolvedOutPath = path.resolve(process.cwd(), outPath);
-      return await writeGeneratedFile({
-        content: html,
-        fileName: path.basename(resolvedOutPath),
-        dir: path.dirname(resolvedOutPath),
-      });
-    } catch (error) {
-      throw wrapWriteError(error, templateId);
-    }
+  writeHtml(outPath: string, html: string, templateId?: string): Promise<string> {
+    return this.writer.writeFile(outPath, html, templateId);
   }
 
-  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
+  write(templateId: string, options: WriteOptions = {}): Promise<string> {
     const html = this.render(templateId, options);
-    const stableName = `${this.slug(templateId)}.html`;
-    const fileName = options.uniqueName ? generateFileName(this.slug(templateId), 'html') : stableName;
-
-    try {
-      if (options.out) {
-        const resolved = path.resolve(process.cwd(), options.out);
-        const looksLikeFile = path.extname(resolved) !== '';
-        const dir = looksLikeFile ? path.dirname(resolved) : resolved;
-        const name = looksLikeFile ? path.basename(resolved) : fileName;
-        return await writeGeneratedFile({
-          content: html,
-          fileName: name,
-          dir,
-        });
-      }
-
-      const written = await writeGeneratedEmail({
-        content: html,
-        fileName,
-        label: templateId,
-        dir: this.outDir,
-      });
-      if (!written) {
-        throw new GenerateTemplateError('WRITE_FAILED', `Failed to write ${fileName}`, templateId);
-      }
-      return written;
-    } catch (error) {
-      throw wrapWriteError(error, templateId);
-    }
+    return this.writer.writeNamed({
+      templateId,
+      html,
+      slug: this.slug(templateId),
+      out: options.out,
+      uniqueName: options.uniqueName,
+    });
   }
 
   async writeAll(outDir = this.outDir): Promise<string[]> {
@@ -169,13 +145,4 @@ export class TemplateGenerator {
 
 export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {
   return new TemplateGenerator(config);
-}
-
-function wrapWriteError(error: unknown, templateId?: string): GenerateTemplateError {
-  if (error instanceof GenerateTemplateError) return error;
-  if (error instanceof MarkupGeneratorError) {
-    return new GenerateTemplateError('WRITE_FAILED', `${error.code}: ${error.message}`, templateId);
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return new GenerateTemplateError('WRITE_FAILED', message, templateId);
 }
