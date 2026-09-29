@@ -28,6 +28,8 @@ export interface RenderOptions {
 
 export interface WriteOptions extends RenderOptions {
   out?: string;
+  /** When true, filename is `{slug}-{uuid}.html` via markup-generator.generateFileName */
+  uniqueName?: boolean;
 }
 
 export interface CliArgs {
