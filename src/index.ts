@@ -18,4 +18,7 @@ export {
   writeGeneratedEmail,
   generateFileName,
   MarkupGeneratorError,
+  pathExists,
+  listTemplateFiles,
+  loadData,
 } from 'markup-generator';
