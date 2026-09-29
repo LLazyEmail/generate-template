@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pathExists } from 'markup-generator';
+import { listTemplateFiles } from './adapters/list-files';
 import { createGenerator, TemplateGenerator } from './generator';
 import type { CliArgs, GenerateRequest } from './types';
 
@@ -42,7 +43,7 @@ export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): G
 export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
   const args = parseArgs(argv);
   const gen = generator ?? createGenerator();
-  const templateFiles = gen.listTemplateFiles();
+  const templateFiles = listTemplateFiles(gen.templatesDir, { skipFiles: gen.skipFiles });
 
   if (args.list) {
     console.log(`Files in ${path.relative(gen.root, gen.templatesDir) || gen.templatesDir}:`);
@@ -52,7 +53,9 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
       console.log('  (No catalog configured — pass createGenerator({ catalog }) from your project)');
     } else {
       gen.catalog.forEach((entry) => {
-        const exists = entry.render ? true : Boolean(entry.file && fs.existsSync(path.join(gen.templatesDir, entry.file)));
+        const exists = entry.render
+          ? true
+          : Boolean(entry.file && pathExists(path.join(gen.templatesDir, entry.file)));
         const source = entry.render ? 'renderer' : entry.file ?? '(no source)';
         console.log(`  ${entry.ids.join(' | ')}  <- ${source}${exists ? '' : ' (missing)'}`);
       });
