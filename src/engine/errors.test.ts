@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGenerator } from './generator';
+import { createGenerator } from '../create-generator';
 import { GenerateTemplateError, isGenerateTemplateError } from './errors';
 
 describe('GenerateTemplateError', () => {
@@ -21,7 +21,6 @@ describe('GenerateTemplateError', () => {
   it('tags missing payloads', async () => {
     const gen = createGenerator({
       catalog: [{ ids: ['only'], render: () => 'x' }],
-      allowMissingDirectories: true,
     });
 
     try {

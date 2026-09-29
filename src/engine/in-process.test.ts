@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GenerateTemplateError } from './errors';
-import { invokeRenderer, renderEntry } from './engine/render';
+import { invokeRenderer, renderEntry } from './render';
 
 describe('in-process renderer', () => {
   it('invokes a function renderer', async () => {

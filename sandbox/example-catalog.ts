@@ -1,4 +1,4 @@
-import type { TemplateCatalogEntry } from '../src/types';
+import type { TemplateCatalogEntry } from '../src/engine/types';
 import { passwordReset } from './templates/password-reset.definition';
 import { orderConfirmation } from './templates/order-confirmation.definition';
 import { WelcomeEmail } from './templates/welcomeEmail';

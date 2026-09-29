@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGenerator } from './generator';
+import { createGenerator } from '../create-generator';
 import { GenerateTemplateError } from './errors';
 import type { GenerateRequest, GenerateResult } from './types';
 
