@@ -1,6 +1,8 @@
 export type TemplateRenderer =
-  | ((payload: unknown) => string)
-  | { render: (payload: unknown) => string };
+  | ((payload: unknown) => string | Promise<string>)
+  | { render: (payload: unknown) => string | Promise<string> };
+
+export type PayloadLoader = (templateId: string, dataPath?: string) => unknown | Promise<unknown>;
 
 export interface TemplateCatalogEntry {
   ids: string[];
@@ -19,16 +21,17 @@ export interface GeneratorConfig {
   outDir?: string;
   skipFiles?: string[];
   allowMissingDirectories?: boolean;
-  /**
-   * When true, catalog `file` entries are loaded via a child Node process.
-   * Default false. Other repos that still use `file` + `exportName` must set this.
-   */
   allowFileTemplates?: boolean;
+  /** Custom payload strategy. Runs before samplePayloads / dataPath. */
+  loadPayload?: PayloadLoader;
+  /** Revive Date objects and ISO strings. Default false. */
+  reviveDates?: boolean;
 }
 
 export interface RenderOptions {
   payload?: unknown;
   dataPath?: string;
+  reviveDates?: boolean;
 }
 
 export interface WriteOptions extends RenderOptions {
@@ -46,6 +49,7 @@ export interface GenerateRequest {
   payload?: unknown;
   dataPath?: string;
   write?: boolean | GenerateWriteOptions;
+  reviveDates?: boolean;
 }
 
 export interface GenerateResult {
