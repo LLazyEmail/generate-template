@@ -1,5 +1,5 @@
-import { GenerateTemplateError } from './errors';
-import type { TemplateCatalogEntry } from './types';
+import { GenerateTemplateError } from '../errors';
+import type { TemplateCatalogEntry } from '../types';
 
 export function findEntry(
   catalog: TemplateCatalogEntry[],

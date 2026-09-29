@@ -2,7 +2,7 @@ import path from 'node:path';
 import { loadData, pathExists } from 'markup-generator';
 import { GenerateTemplateError } from '../errors';
 import type { TemplateCatalogEntry } from '../types';
-import { slugFromId } from '../resolve';
+import { slugFromId } from '../catalog';
 
 export async function loadPayloadFromFiles(options: {
   templateId: string;

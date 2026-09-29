@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Catalog } from './catalog';
-import { GenerateTemplateError } from './errors';
+import { GenerateTemplateError } from '../errors';
 
 describe('Catalog port', () => {
   const catalog = new Catalog([

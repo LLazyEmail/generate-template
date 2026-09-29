@@ -1,5 +1,5 @@
 import { availableIds, findEntry, slugFromId } from './resolve';
-import type { TemplateCatalogEntry } from './types';
+import type { TemplateCatalogEntry } from '../types';
 
 export class Catalog {
   constructor(readonly entries: TemplateCatalogEntry[]) {}
