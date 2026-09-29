@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGenerator, GenerateTemplateError } from '../src/index.ts';
+import { createGenerator, GenerateTemplateError } from '../dist/index.js';
 import { EXAMPLE_CATALOG, EXAMPLE_SAMPLE_PAYLOADS } from './example-catalog.ts';
 
 const sandboxRoot = path.dirname(fileURLToPath(import.meta.url));
