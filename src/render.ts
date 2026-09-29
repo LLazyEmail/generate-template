@@ -1,12 +1,12 @@
 import { GenerateTemplateError } from './errors';
-import { renderFromFile } from './render/file-adapter';
 import { renderInProcess } from './render/in-process';
 import { availableIds, findEntry } from './resolve';
 import { reviveDates } from './payload';
-import type { TemplateCatalogEntry } from './types';
+import type { RenderContext, TemplateCatalogEntry } from './types';
 
 export { invokeRenderer } from './render/in-process';
-export { renderFromFile } from './render/file-adapter';
+
+export type FileRenderer = (ctx: RenderContext) => string | Promise<string>;
 
 export async function renderEntry(options: {
   templateId: string;
@@ -14,8 +14,8 @@ export async function renderEntry(options: {
   catalog: TemplateCatalogEntry[];
   templatesDir: string;
   root: string;
-  allowFileTemplates?: boolean;
   reviveDates?: boolean;
+  fileRenderer?: FileRenderer;
 }): Promise<string> {
   const {
     templateId,
@@ -23,8 +23,8 @@ export async function renderEntry(options: {
     catalog,
     templatesDir,
     root,
-    allowFileTemplates = false,
     reviveDates: shouldRevive = false,
+    fileRenderer,
   } = options;
   const entry = findEntry(catalog, templateId);
   if (!entry) {
@@ -35,7 +35,7 @@ export async function renderEntry(options: {
     );
   }
 
-  const ctx = {
+  const ctx: RenderContext = {
     templateId,
     payload: shouldRevive ? reviveDates(payload) : payload,
     entry,
@@ -48,14 +48,14 @@ export async function renderEntry(options: {
   }
 
   if (entry.file) {
-    if (!allowFileTemplates) {
+    if (!fileRenderer) {
       throw new GenerateTemplateError(
         'RENDER_FAILED',
         `Template "${templateId}" uses a file adapter. Pass allowFileTemplates: true or inject a render function.`,
         templateId
       );
     }
-    return renderFromFile(ctx);
+    return fileRenderer(ctx);
   }
 
   throw new GenerateTemplateError(

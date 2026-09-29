@@ -31,6 +31,7 @@ describe('createGenerator', () => {
     });
 
     expect(gen.find('WELCOME')?.ids).toContain('welcome');
+    expect(gen.ids()).toEqual(['welcome', 'WelcomeEmail']);
     expect(await gen.render('welcome')).toBe('<h1>Hello Alex</h1>');
     expect(await gen.render('WelcomeEmail', { payload: { name: 'Sam' } })).toBe('<h1>Hello Sam</h1>');
   });
@@ -61,7 +62,6 @@ describe('createGenerator', () => {
     });
 
     expect(gen.templatesDir).toBe(path.join(root, 'emails'));
-    expect(gen.listTemplateFiles()).toEqual(['hello.ts']);
   });
 
   it('writes rendered html through markup-generator', async () => {
@@ -84,14 +84,5 @@ describe('createGenerator', () => {
     });
 
     await expect(gen.render('welcome', { payload: {} })).rejects.toThrow(/Unknown template id/);
-  });
-
-  it('handles missing templates directory gracefully', () => {
-    const gen = createGenerator({
-      templatesDir: '/nonexistent/templates',
-      catalog: [{ ids: ['test'], render: () => 'test' }],
-    });
-
-    expect(gen.listTemplateFiles()).toEqual([]);
   });
 });

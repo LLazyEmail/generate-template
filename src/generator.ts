@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { Catalog } from './catalog';
-import { listTemplateFiles as listTemplateFilesOnDisk } from './adapters/list-files';
+import { renderFromFile } from './adapters/file-renderer';
 import { PayloadSource } from './payload';
 import { renderEntry } from './render';
 import { Writer } from './writer';
@@ -68,8 +68,8 @@ export class TemplateGenerator {
     return this.catalogPort.slug(templateId);
   }
 
-  listTemplateFiles(): string[] {
-    return listTemplateFilesOnDisk(this.templatesDir, { skipFiles: this.skipFiles });
+  ids(): string[] {
+    return this.catalog.flatMap((entry) => entry.ids);
   }
 
   loadPayload(templateId: string, dataPath?: string): Promise<unknown> {
@@ -84,8 +84,8 @@ export class TemplateGenerator {
       catalog: this.catalog,
       templatesDir: this.templatesDir,
       root: this.root,
-      allowFileTemplates: this.allowFileTemplates,
       reviveDates: options.reviveDates ?? this.reviveDates,
+      fileRenderer: this.allowFileTemplates ? renderFromFile : undefined,
     });
   }
 

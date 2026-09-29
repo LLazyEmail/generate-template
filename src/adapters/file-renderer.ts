@@ -2,11 +2,12 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathExists } from 'markup-generator';
 import { GenerateTemplateError } from '../errors';
 import { serializePayload } from '../payload';
 import type { RenderContext } from '../types';
 
-/** Legacy adapter. Not part of the core render path. Requires allowFileTemplates. */
+/** Opt-in spawn path. Engine must not import this unless allowFileTemplates. */
 export function renderFromFile(ctx: RenderContext): string {
   if (!ctx.entry.file) {
     throw new GenerateTemplateError(
@@ -17,7 +18,7 @@ export function renderFromFile(ctx: RenderContext): string {
   }
 
   const modulePath = path.join(ctx.templatesDir, ctx.entry.file);
-  if (!fs.existsSync(modulePath)) {
+  if (!pathExists(modulePath)) {
     throw new GenerateTemplateError(
       'RENDER_FAILED',
       `Template file missing: ${path.relative(ctx.root, modulePath)}`,
