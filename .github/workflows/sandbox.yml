@@ -29,8 +29,11 @@ jobs:
       - name: Install
         run: npm install --no-audit --no-fund
 
+      - name: Build package
+        run: npm run build
+
       - name: Render sandbox templates
-        run: npm run sandbox
+        run: node --experimental-strip-types sandbox/example-usage.ts
 
       - name: Require generated HTML
         run: |
@@ -77,7 +80,7 @@ jobs:
               `- Run: ${runUrl}`,
               `- Artifact: \`sandbox-html-pr-${context.payload.pull_request.number}\``,
               '',
-              'Open the run → **Artifacts** → download the zip → open `index.html` or any `*.html`.',
+              'Open the run → **Artifacts** → download → open `index.html` or any `*.html`.',
             ].join('\n');
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

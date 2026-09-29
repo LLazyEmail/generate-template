@@ -1,7 +1,13 @@
-export { createGenerator } from './create-generator';
-export { TemplateGenerator, DEFAULT_OUT_DIR } from './engine';
-export { GenerateTemplateError, isGenerateTemplateError } from './engine/errors';
-export type { GenerateTemplateErrorCode } from './engine/errors';
+import { renderFromFile } from './adapters/file-renderer';
+import { loadPayloadFromFiles } from './adapters/payload-files';
+import { createEngine, TemplateGenerator, DEFAULT_OUT_DIR } from './engine';
+import { GenerateTemplateError, isGenerateTemplateError } from './engine/errors';
+import type { GenerateTemplateErrorCode } from './engine/errors';
+import type { GeneratorConfig } from './engine/types';
+
+export { TemplateGenerator, DEFAULT_OUT_DIR };
+export { GenerateTemplateError, isGenerateTemplateError };
+export type { GenerateTemplateErrorCode };
 export type {
   GeneratorConfig,
   RenderOptions,
@@ -23,3 +29,12 @@ export {
   listTemplateFiles,
   loadData,
 } from 'markup-generator';
+
+/** Package factory. Wires optional disk adapters. Engine does not import them. */
+export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {
+  return createEngine({
+    ...config,
+    fileRenderer: config.fileRenderer ?? (config.allowFileTemplates ? renderFromFile : undefined),
+    loadFromFiles: config.loadFromFiles ?? loadPayloadFromFiles,
+  });
+}

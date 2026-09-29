@@ -1,10 +1,10 @@
-import type { TemplateCatalogEntry } from '../src/engine/types';
-import { passwordReset } from './templates/password-reset.definition';
-import { orderConfirmation } from './templates/order-confirmation.definition';
-import { WelcomeEmail } from './templates/welcomeEmail';
-import { InvoiceEmail } from './templates/invoiceEmail';
-import { TrialExpiringEmail } from './templates/trialExpiringEmail';
-import { UserInvitationEmail } from './templates/userInvitationEmail';
+import type { TemplateCatalogEntry } from '../src/engine/types.ts';
+import { passwordReset } from './templates/password-reset.definition.ts';
+import { orderConfirmation } from './templates/order-confirmation.definition.ts';
+import { WelcomeEmail } from './templates/welcomeEmail.ts';
+import { InvoiceEmail } from './templates/invoiceEmail.ts';
+import { TrialExpiringEmail } from './templates/trialExpiringEmail.ts';
+import { UserInvitationEmail } from './templates/userInvitationEmail.ts';
 
 export const EXAMPLE_CATALOG: TemplateCatalogEntry[] = [
   {
