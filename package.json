@@ -60,6 +60,6 @@
     "url": "git+https://github.com/LLazyEmail/generate-template.git"
   },
   "dependencies": {
-    "markup-generator": "^3.1.5"
+    "markup-generator": "^3.2.0"
   }
 }
