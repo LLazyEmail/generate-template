@@ -24,7 +24,7 @@ function fixtureDir(): string {
 }
 
 describe('file adapter (opt-in)', () => {
-  it('refuses file entries unless allowFileTemplates is set', () => {
+  it('refuses file entries unless allowFileTemplates is set', async () => {
     const dir = fixtureDir();
     const gen = createGenerator({
       root: dir,
@@ -33,7 +33,7 @@ describe('file adapter (opt-in)', () => {
     });
 
     try {
-      gen.render('hello', { payload: { n: 'x' } });
+      await gen.render('hello', { payload: { n: 'x' } });
       throw new Error('expected throw');
     } catch (error) {
       expect(error).toBeInstanceOf(GenerateTemplateError);
@@ -42,7 +42,7 @@ describe('file adapter (opt-in)', () => {
     }
   });
 
-  it('loads a JS module when allowFileTemplates is true', () => {
+  it('loads a JS module when allowFileTemplates is true', async () => {
     const dir = fixtureDir();
     const gen = createGenerator({
       root: dir,
@@ -51,10 +51,10 @@ describe('file adapter (opt-in)', () => {
       catalog: [{ ids: ['hello'], file: 'hello.js', exportName: 'hello' }],
     });
 
-    expect(gen.render('hello', { payload: { n: 'ok' } })).toBe('<p>ok</p>');
+    expect(await gen.render('hello', { payload: { n: 'ok' } })).toBe('<p>ok</p>');
   });
 
-  it('fails when the template file is missing even with the flag', () => {
+  it('fails when the template file is missing even with the flag', async () => {
     const dir = fixtureDir();
     const gen = createGenerator({
       root: dir,
@@ -63,6 +63,6 @@ describe('file adapter (opt-in)', () => {
       catalog: [{ ids: ['hello'], file: 'missing.js', exportName: 'hello' }],
     });
 
-    expect(() => gen.render('hello', { payload: {} })).toThrow(/Template file missing/);
+    await expect(gen.render('hello', { payload: {} })).rejects.toThrow(/Template file missing/);
   });
 });

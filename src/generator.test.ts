@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('createGenerator', () => {
-  it('renders from an injected function without touching the filesystem', () => {
+  it('renders from an injected function without touching the filesystem', async () => {
     const gen = createGenerator({
       catalog: [
         {
@@ -31,11 +31,11 @@ describe('createGenerator', () => {
     });
 
     expect(gen.find('WELCOME')?.ids).toContain('welcome');
-    expect(gen.render('welcome')).toBe('<h1>Hello Alex</h1>');
-    expect(gen.render('WelcomeEmail', { payload: { name: 'Sam' } })).toBe('<h1>Hello Sam</h1>');
+    expect(await gen.render('welcome')).toBe('<h1>Hello Alex</h1>');
+    expect(await gen.render('WelcomeEmail', { payload: { name: 'Sam' } })).toBe('<h1>Hello Sam</h1>');
   });
 
-  it('renders objects that expose .render()', () => {
+  it('renders objects that expose .render()', async () => {
     const gen = createGenerator({
       catalog: [
         {
@@ -45,7 +45,7 @@ describe('createGenerator', () => {
       ],
     });
 
-    expect(gen.render('invoice', { payload: { total: '$49.00' } })).toBe('<p>$49.00</p>');
+    expect(await gen.render('invoice', { payload: { total: '$49.00' } })).toBe('<p>$49.00</p>');
   });
 
   it('resolves paths from a consumer root, not this package', () => {
@@ -78,12 +78,12 @@ describe('createGenerator', () => {
     expect(fs.readFileSync(written, 'utf8')).toBe('<p>hi</p>');
   });
 
-  it('lists and rejects unknown ids using the supplied catalog only', () => {
+  it('lists and rejects unknown ids using the supplied catalog only', async () => {
     const gen = createGenerator({
       catalog: [{ ids: ['only'], render: () => 'x' }],
     });
 
-    expect(() => gen.render('welcome', { payload: {} })).toThrow(/Unknown template id/);
+    await expect(gen.render('welcome', { payload: {} })).rejects.toThrow(/Unknown template id/);
   });
 
   it('handles missing templates directory gracefully', () => {

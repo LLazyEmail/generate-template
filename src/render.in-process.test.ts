@@ -3,20 +3,24 @@ import { GenerateTemplateError } from './errors';
 import { invokeRenderer, renderEntry } from './render';
 
 describe('in-process renderer', () => {
-  it('invokes a function renderer', () => {
-    expect(invokeRenderer((p) => `hi-${(p as { n: string }).n}`, { n: 'a' })).toBe('hi-a');
+  it('invokes a function renderer', async () => {
+    expect(await invokeRenderer((p) => `hi-${(p as { n: string }).n}`, { n: 'a' })).toBe('hi-a');
   });
 
-  it('invokes an object with render()', () => {
-    expect(invokeRenderer({ render: () => '<ok/>' }, {})).toBe('<ok/>');
+  it('invokes an object with render()', async () => {
+    expect(await invokeRenderer({ render: () => '<ok/>' }, {})).toBe('<ok/>');
   });
 
-  it('rejects a non-string return', () => {
-    expect(() => invokeRenderer(() => 1 as never, {})).toThrow(GenerateTemplateError);
+  it('invokes an async renderer', async () => {
+    expect(await invokeRenderer(async () => '<async/>', {})).toBe('<async/>');
   });
 
-  it('renderEntry prefers inject render over file', () => {
-    const html = renderEntry({
+  it('rejects a non-string return', async () => {
+    await expect(invokeRenderer(() => 1 as never, {})).rejects.toThrow(GenerateTemplateError);
+  });
+
+  it('renderEntry prefers inject render over file', async () => {
+    const html = await renderEntry({
       templateId: 'welcome',
       payload: { name: 'Sam' },
       catalog: [
