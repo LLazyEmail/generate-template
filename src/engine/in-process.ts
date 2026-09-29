@@ -1,5 +1,5 @@
-import { GenerateTemplateError } from '../errors';
-import type { RenderContext, TemplateRenderer } from '../types';
+import { GenerateTemplateError } from './errors';
+import type { RenderContext, TemplateRenderer } from './types';
 
 export async function invokeRenderer(
   renderer: TemplateRenderer,

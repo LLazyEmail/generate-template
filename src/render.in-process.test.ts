@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GenerateTemplateError } from './errors';
-import { invokeRenderer, renderEntry } from './render';
+import { invokeRenderer, renderEntry } from './engine/render';
 
 describe('in-process renderer', () => {
   it('invokes a function renderer', async () => {
@@ -30,9 +30,8 @@ describe('in-process renderer', () => {
           render: (p) => `<h1>${(p as { name: string }).name}</h1>`,
         },
       ],
-      templatesDir: '/nope',
-      root: '/nope',
-      allowFileTemplates: false,
+      templatesDir: '',
+      root: '',
     });
     expect(html).toBe('<h1>Sam</h1>');
   });
