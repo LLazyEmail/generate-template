@@ -1,6 +1,6 @@
 import { GenerateTemplateError } from './errors';
 import type { PayloadLoader, TemplateCatalogEntry } from './types';
-import { slugFromId } from './resolve';
+import { slugFromId } from './catalog';
 import { loadPayloadFromFiles } from './adapters/payload-files';
 
 export function serializePayload(payload: unknown): string {

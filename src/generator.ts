@@ -3,7 +3,7 @@ import { Catalog } from './catalog';
 import { renderFromFile } from './adapters/file-renderer';
 import { PayloadSource } from './payload';
 import { renderEntry } from './render';
-import { Writer } from './writer';
+import { Writer } from './persist';
 import type {
   GenerateRequest,
   GenerateResult,

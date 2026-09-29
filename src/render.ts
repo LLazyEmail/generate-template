@@ -1,6 +1,6 @@
 import { GenerateTemplateError } from './errors';
 import { renderInProcess } from './render/in-process';
-import { availableIds, findEntry } from './resolve';
+import { availableIds, findEntry } from './catalog';
 import { reviveDates } from './payload';
 import type { RenderContext, TemplateCatalogEntry } from './types';
 
