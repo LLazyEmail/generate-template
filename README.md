@@ -5,7 +5,11 @@ This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Current version: **0.2.0**. Hosted on GitHub Packages only (not npmjs).
+Current version: **1.0.1**. Published on [npmjs](https://www.npmjs.com/package/@llazyemail/generate-template).
+
+```bash
+npm install @llazyemail/generate-template
+```
 
 ## Public API
 
