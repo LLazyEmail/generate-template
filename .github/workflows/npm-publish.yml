@@ -17,15 +17,16 @@ concurrency:
   group: github-packages-publish
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 jobs:
   publish:
     name: Build, test, and publish
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,7 +36,11 @@ jobs:
           node-version: 24
           registry-url: https://npm.pkg.github.com
           scope: '@llazyemail'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm install --no-audit --no-fund
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
