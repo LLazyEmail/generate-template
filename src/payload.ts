@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GenerateTemplateError } from './errors';
 import type { TemplateCatalogEntry } from './types';
 import { slugFromId } from './resolve';
 
@@ -61,25 +62,25 @@ export function loadPayload(options: {
   const { templateId, dataPath, catalog, samplePayloads, dataDir, allowMissingDirectories = false } = options;
   if (dataPath) return requireData(path.resolve(process.cwd(), dataPath));
   if (samplePayloads[templateId]) return samplePayloads[templateId];
-  
-  // Check if data directory exists before trying to load files
+
   if (!fs.existsSync(dataDir)) {
-    if (allowMissingDirectories) {
-      throw new Error(
-        `No payload for "${templateId}". Pass dataPath or add sample payload. Data directory ${dataDir} does not exist.`
-      );
-    }
-    throw new Error(
-      `Data directory does not exist: ${dataDir}. Pass dataPath or create the directory with sample data files.`
+    throw new GenerateTemplateError(
+      'NO_PAYLOAD',
+      allowMissingDirectories
+        ? `No payload for "${templateId}". Pass dataPath or add sample payload. Data directory ${dataDir} does not exist.`
+        : `Data directory does not exist: ${dataDir}. Pass dataPath or create the directory with sample data files.`,
+      templateId
     );
   }
-  
+
   const slugs = [templateId, slugFromId(catalog, templateId)];
   for (const slug of slugs) {
     const candidate = path.join(dataDir, `${slug}.data.js`);
     if (fs.existsSync(candidate)) return requireData(candidate);
   }
-  throw new Error(
-    `No payload for "${templateId}". Pass dataPath or add ${path.join(dataDir, `${slugFromId(catalog, templateId)}.data.js`)}`
+  throw new GenerateTemplateError(
+    'NO_PAYLOAD',
+    `No payload for "${templateId}". Pass dataPath or add ${path.join(dataDir, `${slugFromId(catalog, templateId)}.data.js`)}`,
+    templateId
   );
 }

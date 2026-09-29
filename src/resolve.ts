@@ -1,3 +1,4 @@
+import { GenerateTemplateError } from './errors';
 import type { TemplateCatalogEntry } from './types';
 
 export function findEntry(
@@ -5,7 +6,7 @@ export function findEntry(
   templateId: string
 ): TemplateCatalogEntry | undefined {
   if (!Array.isArray(catalog)) {
-    throw new Error('catalog must be an array');
+    throw new GenerateTemplateError('INVALID_CONFIG', 'catalog must be an array');
   }
   const needle = String(templateId).toLowerCase();
   return catalog.find((entry) => entry.ids.some((id) => id.toLowerCase() === needle));
