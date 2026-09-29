@@ -1,13 +1,7 @@
-import { createRequire } from 'node:module';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { readJson } from 'markup-generator';
 import { GenerateTemplateError } from './errors';
 import type { PayloadLoader, TemplateCatalogEntry } from './types';
 import { slugFromId } from './resolve';
-
-const requireData = createRequire(fileURLToPath(import.meta.url));
+import { loadPayloadFromFiles } from './adapters/payload-files';
 
 export function serializePayload(payload: unknown): string {
   return JSON.stringify(replaceDates(payload));
@@ -58,7 +52,7 @@ export class PayloadSource {
       catalog: TemplateCatalogEntry[];
       samplePayloads: Record<string, unknown>;
       dataDir: string;
-      allowMissingDirectories: boolean;
+      useDataFiles: boolean;
       loadPayload?: PayloadLoader;
     }
   ) {}
@@ -73,7 +67,7 @@ export class PayloadSource {
       catalog: this.options.catalog,
       samplePayloads: this.options.samplePayloads,
       dataDir: this.options.dataDir,
-      allowMissingDirectories: this.options.allowMissingDirectories,
+      useDataFiles: this.options.useDataFiles,
     });
   }
 }
@@ -84,46 +78,30 @@ export async function loadPayload(options: {
   catalog: TemplateCatalogEntry[];
   samplePayloads: Record<string, unknown>;
   dataDir: string;
-  allowMissingDirectories?: boolean;
+  useDataFiles?: boolean;
 }): Promise<unknown> {
-  const { templateId, dataPath, catalog, samplePayloads, dataDir, allowMissingDirectories = false } = options;
+  const {
+    templateId,
+    dataPath,
+    catalog,
+    samplePayloads,
+    dataDir,
+    useDataFiles = false,
+  } = options;
 
   if (dataPath) {
-    return loadDataFile(path.resolve(process.cwd(), dataPath), templateId);
+    return loadPayloadFromFiles({ templateId, dataPath, catalog, dataDir });
   }
   if (samplePayloads[templateId]) return samplePayloads[templateId];
 
-  if (!fs.existsSync(dataDir)) {
-    throw new GenerateTemplateError(
-      'NO_PAYLOAD',
-      allowMissingDirectories
-        ? `No payload for "${templateId}". Pass dataPath, payload, samplePayloads, or a loadPayload hook.`
-        : `Data directory does not exist: ${dataDir}. Pass payload, dataPath, or create the directory.`,
-      templateId
-    );
+  if (useDataFiles) {
+    return loadPayloadFromFiles({ templateId, catalog, dataDir });
   }
 
-  const slugs = [templateId, slugFromId(catalog, templateId)];
-  for (const slug of slugs) {
-    const candidate = path.join(dataDir, `${slug}.data.js`);
-    if (fs.existsSync(candidate)) return requireData(candidate);
-  }
   throw new GenerateTemplateError(
     'NO_PAYLOAD',
-    `No payload for "${templateId}". Pass payload, dataPath, or add ${path.join(dataDir, `${slugFromId(catalog, templateId)}.data.js`)}`,
+    `No payload for "${templateId}". Pass payload, dataPath, samplePayloads, a loadPayload hook, or set useDataFiles.` +
+      (dataDir ? ` (${slugFromId(catalog, templateId)}.data.js)` : ''),
     templateId
   );
-}
-
-async function loadDataFile(absolutePath: string, templateId: string): Promise<unknown> {
-  const ext = path.extname(absolutePath).toLowerCase();
-  if (ext === '.json') {
-    try {
-      return await readJson(absolutePath);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new GenerateTemplateError('NO_PAYLOAD', message, templateId);
-    }
-  }
-  return requireData(absolutePath);
 }

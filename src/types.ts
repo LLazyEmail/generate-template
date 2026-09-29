@@ -22,9 +22,9 @@ export interface GeneratorConfig {
   skipFiles?: string[];
   allowMissingDirectories?: boolean;
   allowFileTemplates?: boolean;
-  /** Custom payload strategy. Runs before samplePayloads / dataPath. */
+  /** Opt into scanning dataDir for {slug}.data.js. Default false. */
+  useDataFiles?: boolean;
   loadPayload?: PayloadLoader;
-  /** Revive Date objects and ISO strings. Default false. */
   reviveDates?: boolean;
 }
 
