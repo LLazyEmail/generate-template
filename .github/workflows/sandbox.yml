@@ -57,7 +57,7 @@ jobs:
           } > sandbox/generated/index.html
 
       - name: Upload sandbox HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sandbox-html-pr-${{ github.event.pull_request.number }}
           path: sandbox/generated
