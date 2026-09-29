@@ -1,0 +1,102 @@
+name: Sandbox HTML
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: sandbox-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  generate:
+    name: Generate sandbox HTML
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Render sandbox templates
+        run: npm run sandbox
+
+      - name: Require generated HTML
+        run: |
+          set -euo pipefail
+          test -d sandbox/generated
+          count=$(find sandbox/generated -name '*.html' | wc -l)
+          echo "generated $count html files"
+          find sandbox/generated -name '*.html' -printf '%p %s bytes\n'
+          test "$count" -ge 1
+
+      - name: Write index.html
+        run: |
+          set -euo pipefail
+          {
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sandbox emails</title></head><body>'
+            echo "<h1>Sandbox emails — PR #${{ github.event.pull_request.number }}</h1>"
+            echo '<ul>'
+            for f in sandbox/generated/*.html; do
+              name=$(basename "$f")
+              if [ "$name" = index.html ]; then continue; fi
+              echo "<li><a href=\"$name\">$name</a></li>"
+            done
+            echo '</ul></body></html>'
+          } > sandbox/generated/index.html
+
+      - name: Upload sandbox HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-html-pr-${{ github.event.pull_request.number }}
+          path: sandbox/generated
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Comment on the pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### Sandbox HTML',
+              '',
+              'This PR rendered the sandbox templates.',
+              '',
+              `- Run: ${runUrl}`,
+              `- Artifact: \`sandbox-html-pr-${context.payload.pull_request.number}\``,
+              '',
+              'Open the run → **Artifacts** → download the zip → open `index.html` or any `*.html`.',
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes('### Sandbox HTML'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
