@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createGenerator } from '../create-generator';
-import { GenerateTemplateError } from './errors';
+import { createGenerator } from '../../src/create-generator';
+import { GenerateTemplateError } from '../../src/engine/errors';
 
 describe('migration for other repositories', () => {
   it('old file-only catalog no longer renders by default', async () => {

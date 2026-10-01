@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { listTemplateFiles } from './list-files';
+import { listTemplateFiles } from '../../src/adapters/list-files';
 
 const tempDirs: string[] = [];
 

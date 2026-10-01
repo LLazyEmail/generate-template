@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createGenerator } from '../create-generator';
-import { GenerateTemplateError } from './errors';
+import { createGenerator } from '../../src/create-generator';
+import { GenerateTemplateError } from '../../src/engine/errors';
 
 const tempDirs: string[] = [];
 
