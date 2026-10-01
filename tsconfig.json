@@ -10,6 +10,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "tests", "dist"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "tests/**/*.spec.ts", "tests/**/*.test.ts", "dist"]
 }
