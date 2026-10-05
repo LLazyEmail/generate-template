@@ -5,7 +5,7 @@ This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Current version: **1.0.1**. Published on [npmjs](https://www.npmjs.com/package/@llazyemail/generate-template).
+Current version: **1.1.0**. Published on [npmjs](https://www.npmjs.com/package/@llazyemail/generate-template).
 
 ```bash
 npm install @llazyemail/generate-template
@@ -39,11 +39,38 @@ Date revival is off unless `reviveDates: true`.
 
 ## CLI
 
-The CLI is an adapter over `run()`. Drive it from your project — it is not a package export.
+Project scripts should call the exported adapter with their own generator. Flags match the postmark script: `--list` `--all` `--template=` `--data=` `--out=`.
 
 ```ts
-import { createGenerator } from '@llazyemail/generate-template';
-// bin: generate-template --template=welcome --out=generated/welcome.html
+import { main } from '@llazyemail/generate-template';
+import { createProjectGenerator } from './create-project-generator';
+
+main(process.argv.slice(2), createProjectGenerator()).catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+});
+```
+
+The `generate-template` bin is the same adapter with an empty catalog. It errors until a project passes `createGenerator({ catalog })`.
+
+## Assert generated HTML
+
+Port of `scripts/assert-generated.ts`. Slugs stay in the project; the check does not.
+
+```ts
+import { runAssertGenerated, slugsFromGenerator } from '@llazyemail/generate-template';
+import slugs from './tests/fixtures/generated-slugs.json' with { type: 'json' };
+
+runAssertGenerated({ slugs, argv: process.argv.slice(2) });
+// or: runAssertGenerated({ slugs: slugsFromGenerator(generate) });
+```
+
+`assertGenerated({ slugs, outDir })` returns `{ ok, missing, invalid }` and does not exit. A file counts only if it exists and its contents include `<html` or `<!doctype`.
+
+Bin form, when the slug list is on disk:
+
+```bash
+generate-template-assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
 ```
 
 ## Scripts
