@@ -1,11 +1,10 @@
-# Publish @llazyemail/generate-template to npmjs.org when a Release is published.
+# Publish @llazyemail/generate-template to GitHub Packages when a Release is published.
 #
-# Required repo secret: NPM_TOKEN
-#   Settings → Secrets and variables → Actions → New repository secret
-#   Create an npm Automation token (or granular token with Read/write on
-#   @llazyemail/generate-template) at https://www.npmjs.com/settings/~/tokens
+# Auth is the workflow GITHUB_TOKEN. The package scope must match the owner
+# (LLazyEmail -> @llazyemail). Repo visibility controls package visibility.
+# No NPM_TOKEN secret is required.
 
-name: Publish to npmjs
+name: Publish to GitHub Packages
 
 on:
   release:
@@ -19,12 +18,12 @@ on:
         default: false
 
 concurrency:
-  group: npmjs-publish
+  group: github-packages-publish
   cancel-in-progress: false
 
 permissions:
   contents: read
-  id-token: write
+  packages: write
 
 jobs:
   publish:
@@ -39,7 +38,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
+          registry-url: https://npm.pkg.github.com
           scope: '@llazyemail'
           always-auth: true
 
@@ -50,24 +49,8 @@ jobs:
       - run: npm test
       - run: npm pack --dry-run
 
-      - name: Check NPM_TOKEN
+      - name: Publish to GitHub Packages
         if: ${{ github.event_name == 'release' || inputs.dry_run != true }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::NPM_TOKEN secret is empty. Add an npm automation token at Settings → Secrets → Actions as NPM_TOKEN."
-            exit 1
-          fi
-
-      - name: Publish to npmjs.org
-        if: ${{ github.event_name == 'release' || inputs.dry_run != true }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cat > "$HOME/.npmrc" <<'EOF'
-          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-          @llazyemail:registry=https://registry.npmjs.org/
-          always-auth=true
-          EOF
-          npm publish --access public --provenance
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish
