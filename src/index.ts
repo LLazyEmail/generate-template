@@ -18,6 +18,7 @@ export type {
   GenerateResult,
   GenerateWriteOptions,
   TemplateCatalogEntry,
+  CliArgs,
 } from './engine/types';
 
 export {
@@ -29,6 +30,19 @@ export {
   listTemplateFiles,
   loadData,
 } from 'markup-generator';
+
+export { parseArgs, requestsFromArgs, main } from './cli';
+export {
+  assertGenerated,
+  formatAssertGenerated,
+  outDirFromArgv,
+  readSlugsFile,
+  runAssertGenerated,
+  slugsFileFromArgv,
+  slugsFromArgv,
+  slugsFromGenerator,
+} from './assert-generated';
+export type { AssertGeneratedOptions, AssertGeneratedResult, RunAssertGeneratedOptions } from './assert-generated';
 
 /** Package factory. Wires optional disk adapters. Engine does not import them. */
 export function createGenerator(config: GeneratorConfig = {}): TemplateGenerator {

@@ -11,10 +11,17 @@ describe('public package surface', () => {
     expect(typeof api.generateFileName).toBe('function');
   });
 
+  it('exports the project CLI and generated-html assert adapters', () => {
+    expect(typeof api.parseArgs).toBe('function');
+    expect(typeof api.requestsFromArgs).toBe('function');
+    expect(typeof api.main).toBe('function');
+    expect(typeof api.assertGenerated).toBe('function');
+    expect(typeof api.runAssertGenerated).toBe('function');
+    expect(typeof api.slugsFromGenerator).toBe('function');
+  });
+
   it('does not export internals', () => {
     const exported = Object.keys(api);
-    expect(exported).not.toContain('parseArgs');
-    expect(exported).not.toContain('main');
     expect(exported).not.toContain('generateTemplate');
     expect(exported).not.toContain('findEntry');
     expect(exported).not.toContain('loadPayload');
