@@ -5,7 +5,9 @@ This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Current version: **1.1.0**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+Current version: **1.2.0**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+
+`1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release. `1.2.0` is this CLI fix.
 
 ```bash
 npm install @llazyemail/generate-template
@@ -41,39 +43,25 @@ Date revival is off unless `reviveDates: true`.
 
 ## CLI
 
-Project scripts should call the exported adapter with their own generator. Flags match the postmark script: `--list` `--all` `--template=` `--data=` `--out=`.
+The bin loads a project catalog. It does not ship one.
 
-```ts
-import { main } from '@llazyemail/generate-template';
-import { createProjectGenerator } from './create-project-generator';
-
-main(process.argv.slice(2), createProjectGenerator()).catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+```js
+// generate-template.config.js
+export { createProjectGenerator } from './scripts/create-project-generator.js';
 ```
 
-The `generate-template` bin is the same adapter with an empty catalog. It errors until a project passes `createGenerator({ catalog })`.
-
-## Assert generated HTML
-
-Port of `scripts/assert-generated.ts`. Slugs stay in the project; the check does not.
-
-```ts
-import { runAssertGenerated, slugsFromGenerator } from '@llazyemail/generate-template';
-import slugs from './tests/fixtures/generated-slugs.json' with { type: 'json' };
-
-runAssertGenerated({ slugs, argv: process.argv.slice(2) });
-// or: runAssertGenerated({ slugs: slugsFromGenerator(generate) });
-```
-
-`assertGenerated({ slugs, outDir })` returns `{ ok, missing, invalid }` and does not exit. A file counts only if it exists and its contents include `<html` or `<!doctype`.
-
-Bin form, when the slug list is on disk:
+Or set `package.json` `"generateTemplate": "./scripts/create-project-generator.js"`. That module must export `createProjectGenerator()`, `generator`, or a default function returning a generator. `--config=` overrides the search.
 
 ```bash
-generate-template-assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
+generate-template --list
+generate-template --template=welcome --data=src/data/welcome.data.js --out=generated/welcome.html
+generate-template --all --out=generated
+generate-template assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
 ```
+
+`--all` (also the default when `--template` is omitted) calls `writeAll(outDir)`. A single `--template` calls `run()`, so `--data=` still loads through the same `createGenerator` factory as the library. `generate-template-assert` is the assert command without the `assert` subcommand.
+
+Passing a generator to `main(argv, generator)` still skips the config file. That is what a project script can do. The bin itself always calls `main()` — it does not compare `argv[1]` to its own file, so an npm `.bin` symlink still runs.
 
 ## Scripts
 

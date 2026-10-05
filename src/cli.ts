@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { pathExists } from 'markup-generator';
 import { listTemplateFiles } from './adapters/list-files';
+import { runAssertGenerated, slugsFileFromArgv, slugsFromArgv, slugsFromGenerator } from './assert-generated';
+import { loadProjectGenerator } from './config';
 import { createGenerator } from './create-generator';
 import type { TemplateGenerator } from './engine';
 import type { CliArgs, GenerateRequest } from './engine/types';
@@ -39,9 +41,29 @@ export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): G
   }));
 }
 
+export function wantsAll(args: CliArgs): boolean {
+  return args.all === true || !args.template || args.template === 'all';
+}
+
+async function resolveGenerator(generator: TemplateGenerator | undefined, args: CliArgs): Promise<TemplateGenerator> {
+  return generator ?? (await loadProjectGenerator({ config: args.config })) ?? createGenerator();
+}
+
+function warnUncatalogued(gen: TemplateGenerator, templateFiles: string[]): void {
+  if (!gen.templatesDir) return;
+  const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
+  const extra = templateFiles.filter((file) => !catalogFiles.has(file));
+  if (extra.length) console.warn(`Warning: template files not in catalog: ${extra.join(', ')}`);
+}
+
 export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
+  if (argv[0] === 'assert') {
+    await runAssertCommand(argv.slice(1), generator);
+    return;
+  }
+
   const args = parseArgs(argv);
-  const gen = generator ?? createGenerator();
+  const gen = await resolveGenerator(generator, args);
   const templatesDir = gen.templatesDir;
   const templateFiles = templatesDir ? listTemplateFiles(templatesDir, { skipFiles: gen.skipFiles }) : [];
 
@@ -50,7 +72,7 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
     templateFiles.forEach((file) => console.log(`  ${file}`));
     console.log('Generatable templates:');
     if (gen.catalog.length === 0) {
-      console.log('  (No catalog configured — pass createGenerator({ catalog }) from your project)');
+      console.log('  (No catalog configured — add generate-template.config.js or pass --config=)');
     } else {
       gen.catalog.forEach((entry) => {
         const exists = entry.render
@@ -64,23 +86,26 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
   }
 
   if (gen.catalog.length === 0) {
-    console.error('Error: No catalog configured. Use createGenerator({ catalog }) from your project.');
+    console.error('Error: No catalog configured. Add generate-template.config.js exporting createProjectGenerator(), or pass --config=.');
     process.exitCode = 1;
     return;
   }
 
-  for (const request of requestsFromArgs(args, gen)) {
-    const result = await gen.run(request);
-    if (result.path) console.log(result.path);
+  if (wantsAll(args)) {
+    const paths = await gen.writeAll(args.out || gen.outDir);
+    paths.forEach((filePath) => console.log(filePath));
+    warnUncatalogued(gen, templateFiles);
+    return;
   }
 
-  const wantAll = args.all === true || !args.template || args.template === 'all';
-  if (wantAll && templatesDir) {
-    const catalogFiles = new Set(gen.catalog.map((entry) => entry.file).filter(Boolean));
-    const extra = templateFiles.filter((file) => !catalogFiles.has(file));
-    if (extra.length) {
-      console.warn(`Warning: template files not in catalog: ${extra.join(', ')}`);
-    }
-  }
+  const [request] = requestsFromArgs(args, gen);
+  const result = await gen.run(request);
+  if (result.path) console.log(result.path);
 }
 
+async function runAssertCommand(argv: string[], generator?: TemplateGenerator): Promise<void> {
+  const args = parseArgs(argv);
+  const gen = generator ?? (await loadProjectGenerator({ config: args.config }));
+  const slugs = slugsFromArgv(argv) ?? (slugsFileFromArgv(argv) ? undefined : gen ? slugsFromGenerator(gen) : undefined);
+  runAssertGenerated({ argv, slugs });
+}

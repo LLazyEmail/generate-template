@@ -16,8 +16,8 @@ export default defineConfig([
   },
   {
     entry: {
-      cli: 'src/cli-bin.ts',
-      'assert-cli': 'src/assert-cli.ts',
+      cli: 'src/bin.ts',
+      'assert-cli': 'src/bin-assert.ts',
     },
     format: ['esm'],
     dts: false,
