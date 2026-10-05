@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
-import { createGenerator } from '../src/create-generator';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createGenerator as packageFactory } from '../src/create-generator';
+import { createGenerator } from '../src/index';
+import { findConfigPath, loadProjectGenerator } from '../src/config';
 import { parseArgs, requestsFromArgs, main } from '../src/cli';
 
 const tempDirs: string[] = [];
@@ -13,20 +15,30 @@ afterEach(() => {
   }
 });
 
+function tempDir(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gt-cli-'));
+  tempDirs.push(dir);
+  return dir;
+}
+
 describe('CLI adapter', () => {
   it('parses flags', () => {
-    expect(parseArgs(['--all', '--list', '--template=welcome', '--data=./p.json', '--out=out'])).toEqual({
+    expect(parseArgs(['--all', '--list', '--template=welcome', '--data=./p.json', '--out=out', '--config=gen.js'])).toEqual({
       all: true,
       list: true,
       template: 'welcome',
       data: './p.json',
       out: 'out',
+      config: 'gen.js',
     });
   });
 
+  it('uses the same createGenerator as the package entry', () => {
+    expect(packageFactory).toBe(createGenerator);
+  });
+
   it('maps argv to GenerateRequest and runs the engine', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gt-cli-'));
-    tempDirs.push(dir);
+    const dir = tempDir();
     const gen = createGenerator({
       catalog: [{ ids: ['welcome'], render: () => '<p>w</p>' }],
       samplePayloads: { welcome: {} },
@@ -51,4 +63,76 @@ describe('CLI adapter', () => {
     });
     await main(['--list'], gen);
   });
+
+  it('--all writes through writeAll once per catalog entry', async () => {
+    const dir = tempDir();
+    const render = vi.fn(() => '<html>ok</html>');
+    const gen = createGenerator({
+      catalog: [
+        { ids: ['welcome'], render },
+        { ids: ['invoice'], render },
+      ],
+      samplePayloads: { welcome: {}, invoice: {} },
+      outDir: dir,
+    });
+    await main(['--all', `--out=${dir}`], gen);
+    expect(render).toHaveBeenCalledTimes(2);
+    expect(fs.readFileSync(path.join(dir, 'welcome.html'), 'utf8')).toBe('<html>ok</html>');
+    expect(fs.readFileSync(path.join(dir, 'invoice.html'), 'utf8')).toBe('<html>ok</html>');
+  });
+
+  it('assert command checks slugs from the generator', async () => {
+    const dir = tempDir();
+    const previous = process.exitCode;
+    fs.writeFileSync(path.join(dir, 'welcome.html'), '<html></html>');
+    const gen = createGenerator({
+      catalog: [{ ids: ['welcome'], render: () => '<html></html>' }],
+      outDir: dir,
+    });
+    const errors: string[] = [];
+    const logged: string[] = [];
+    const log = console.log;
+    const error = console.error;
+    console.log = (message?: unknown) => logged.push(String(message));
+    console.error = (message?: unknown) => errors.push(String(message));
+    try {
+      await main(['assert', `--out=${dir}`], gen);
+      expect(logged.at(-1)).toContain('ok: 1 generated HTML files');
+      await main(['assert', '--slugs=missing', `--out=${dir}`], gen);
+      expect(errors.at(-1)).toContain('Missing generated files:');
+      expect(process.exitCode).toBe(1);
+    } finally {
+      console.log = log;
+      console.error = error;
+      process.exitCode = previous;
+    }
+  });
+
+  it('loads createProjectGenerator from a config module', async () => {
+    const dir = tempDir();
+    fs.writeFileSync(
+      path.join(dir, 'generate-template.config.mjs'),
+      `export function createProjectGenerator() {
+        return { catalog: [{ ids: ['welcome'] }], run() {}, writeAll() { return []; } };
+      }`,
+    );
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ generateTemplate: './other.mjs' }));
+    expect(findConfigPath(dir)).toBe(path.join(dir, 'other.mjs'));
+    fs.rmSync(path.join(dir, 'package.json'));
+    const gen = await loadProjectGenerator({ cwd: dir });
+    expect(gen?.catalog[0].ids).toEqual(['welcome']);
+  });
+
+  it('--data uses the package payload loader', async () => {
+    const dir = tempDir();
+    fs.writeFileSync(path.join(dir, 'payload.js'), 'export default { name: "Ada" };');
+    const gen = createGenerator({
+      catalog: [{ ids: ['welcome'], render: (payload) => `<html>${(payload as { name: string }).name}</html>` }],
+      root: dir,
+      dataDir: dir,
+    });
+    await main(['--template=welcome', `--data=${path.join(dir, 'payload.js')}`, `--out=${path.join(dir, 'welcome.html')}`], gen);
+    expect(fs.readFileSync(path.join(dir, 'welcome.html'), 'utf8')).toBe('<html>Ada</html>');
+  });
 });
+

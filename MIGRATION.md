@@ -1,41 +1,62 @@
 # Migrating sibling repos to createGenerator + run()
 
-Sibling repos should not keep their own generate/assert scripts. Import the adapters from this package.
+Sibling repos should not keep their own generate/assert scripts.
+
+## Versions
+
+`0.2.0` was an unpublished branch while writes moved to markup-generator. It is not a release. `1.0.1` is the version Postmark depends on. `1.2.0` is the CLI fix: config loader, bin without a symlink check, `assert` command, and `--all` via `writeAll()`.
 
 ## Generate CLI
 
-Replace `scripts/generate-template.ts` with a project generator plus `main()`:
+The bin loads a catalog. Export `createProjectGenerator` from `generate-template.config.js`, or set `package.json` `"generateTemplate"` to that module. `--config=` overrides the search.
 
-```ts
-import { main } from '@llazyemail/generate-template';
-import { createProjectGenerator } from './create-project-generator';
-
-main(process.argv.slice(2), createProjectGenerator()).catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+```bash
+generate-template --list
+generate-template --all --out=generated
+generate-template --template=welcome --data=src/data/welcome.data.js
 ```
 
-`main` accepts `--list`, `--all`, `--template=`, `--data=`, and `--out=`. `--all`, a missing `--template`, or `--template=all` writes every catalog entry. `parseArgs` and `requestsFromArgs` are exported for tests.
+`--all`, a missing `--template`, or `--template=all` calls `generator.writeAll(outDir)`. That writes `{slug}.html` for each catalog entry's first id, same files as the old Postmark script. A single template still uses `run()`, so `--data=` goes through `loadPayloadFromFiles`.
+
+`main(argv, generator)` still accepts an injected generator and skips the config file.
 
 ## Assert generated HTML
 
-Replace `scripts/assert-generated.ts`. Pass the project's slug list; do not import a fixture from this package.
-
-```ts
-import { runAssertGenerated } from '@llazyemail/generate-template';
-import slugs from '../tests/fixtures/generated-slugs.json' with { type: 'json' };
-
-runAssertGenerated({ slugs, argv: process.argv.slice(2) });
-```
-
-Or drop the script and call the bin:
-
 ```bash
-generate-template-assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
+generate-template assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
+generate-template-assert --slugs=welcome,invoice --out=generated
 ```
+
+With a loaded catalog and no slug flag, `assert` uses `slugsFromGenerator`. A file counts only if it exists and includes `<html` or `<!doctype`.
 
 ## Engine contract
+
+```ts
+import {
+  createGenerator,
+  GenerateTemplateError,
+  type GenerateRequest,
+} from '@llazyemail/generate-template';
+
+const generate = createGenerator({
+  catalog: [{ ids: ['welcome', 'WelcomeEmail'], render: WelcomeEmail }],
+  samplePayloads: { welcome: { name: 'Alex' } },
+});
+
+const html = await generate.render('welcome');
+const result = await generate.run({ templateId: 'welcome', payload: { name: 'Alex' } });
+```
+
+| Old local script | Package |
+|---|---|
+| `scripts/generate-template.ts` | `generate-template` bin, or `main(argv, createProjectGenerator())` |
+| `scripts/assert-generated.ts` | `generate-template assert` |
+| `generate.writeAll(out)` | `main` `--all` calls `writeAll` |
+| `generateTemplate({ title })` | gone — that was a toy HTML wrapper |
+| `findEntry(catalog, id)` | `generate.find(id)` |
+| `loadPayload(id)` | `await generate.loadPayload(id)` or pass `payload` on `run` |
+| `{ file, exportName }` | inject `render`, or set `allowFileTemplates: true` |
+
 
 ```ts
 import {

@@ -74,6 +74,7 @@ export interface CliArgs {
   template?: string;
   data?: string;
   out?: string;
+  config?: string;
 }
 
 export interface RenderContext {

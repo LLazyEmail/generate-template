@@ -17,7 +17,7 @@ describe('public package surface', () => {
     expect(typeof api.main).toBe('function');
     expect(typeof api.assertGenerated).toBe('function');
     expect(typeof api.runAssertGenerated).toBe('function');
-    expect(typeof api.slugsFromGenerator).toBe('function');
+    expect(typeof api.loadProjectGenerator).toBe('function');
   });
 
   it('does not export internals', () => {
