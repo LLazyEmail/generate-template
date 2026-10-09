@@ -1,6 +1,6 @@
 {
   "name": "@llazyemail/generate-template",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Configurable engine for rendering named email templates to HTML.",
   "author": "Arthur Tkachenko",
   "license": "MIT",
