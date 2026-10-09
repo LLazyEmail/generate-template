@@ -8,7 +8,6 @@ import type {
   GenerateRequest,
   GenerateResult,
   GeneratorConfig,
-  PayloadFromFiles,
   RenderOptions,
   TemplateCatalogEntry,
   WriteOptions,
@@ -107,7 +106,11 @@ export class TemplateGenerator {
   async writeAll(outDir = this.outDir): Promise<string[]> {
     const paths: string[] = [];
     for (const entry of this.catalog) {
-      paths.push(await this.write(entry.ids[0], { out: path.join(outDir, `${this.slug(entry.ids[0])}.html`) }));
+      paths.push(
+        await this.write(entry.ids[0], {
+          out: path.join(outDir, `${this.slug(entry.ids[0])}.html`),
+        }),
+      );
     }
     return paths;
   }
@@ -124,10 +127,10 @@ export class TemplateGenerator {
     };
     if (request.write) {
       const writeOpts = request.write === true ? {} : request.write;
-      result.path = await this.write(request.templateId, {
-        payload: request.payload,
-        dataPath: request.dataPath,
-        reviveDates: request.reviveDates,
+      result.path = await this.writer.writeNamed({
+        templateId: request.templateId,
+        html,
+        slug: this.slug(request.templateId),
         out: writeOpts.out,
         uniqueName: writeOpts.uniqueName,
       });

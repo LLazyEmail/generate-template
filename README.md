@@ -3,7 +3,7 @@
 Engine for turning **your** named email templates into HTML.
 This package does not ship templates. You pass a catalog and render functions.
 
-Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
+Requires **Node.js >= 22.18**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
 Current version: **1.5.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
 
@@ -53,19 +53,17 @@ export { createProjectGenerator } from './scripts/create-project-generator.js';
 Or set `package.json` `"generateTemplate": "./scripts/create-project-generator.js"`. That module must export `createProjectGenerator()`, `generator`, or a default function returning a generator. `--config=` overrides the search.
 
 ```bash
+generate-template --help
 generate-template --list
-generate-template --template=welcome --data=src/data/welcome.data.js --out=generated/welcome.html
-generate-template --all --out=generated
-generate-template assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
 ```
 
-`--all` (also the default when `--template` is omitted) calls `writeAll(outDir)`. A single `--template` calls `run()`, so `--data=` still loads through the same `createGenerator` factory as the library. `generate-template-assert` is the assert command without the `assert` subcommand.
+`--help` prints usage. With no flags and no config, the bin prints usage and exits 1. `--all` (also the default when a config exists and `--template` is omitted) calls `writeAll(outDir)`. A single `--template` calls `run()`, so `--data=` still loads through the same `createGenerator` factory as the library. `run({ write })` renders once. `generate-template-assert` is the assert command without the `assert` subcommand.
 
 Passing a generator to `main(argv, generator)` still skips the config file. That is what a project script can do. The bin itself always calls `main()` — it does not compare `argv[1]` to its own file, so an npm `.bin` symlink still runs.
 
 ## Sandbox
 
-`sandbox/` is a local proof, not part of the package. It renders six simple HTML templates through `createGenerator` + `run()` and writes `sandbox/generated/`.
+`sandbox/` is a local proof, not part of the package. It renders three package-owned fixtures through `createGenerator` + `run()` and writes `sandbox/generated/`.
 
 ```bash
 npm run sandbox
@@ -77,6 +75,12 @@ Open `sandbox/generated/index.html` after it succeeds. `package.json` `files` an
 
 ```bash
 npm test
+npm run test:coverage
 npm run typecheck
+npm run lint
 npm run build
+npm run sandbox
+npx changeset
 ```
+
+Versions are bumped by Changesets. Add a changeset for user-facing changes. Merging the Version Packages pull request updates `CHANGELOG.md`; publishing still happens when a GitHub Release is published.

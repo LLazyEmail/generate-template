@@ -71,6 +71,7 @@ export interface GenerateResult {
 export interface CliArgs {
   all?: boolean;
   list?: boolean;
+  help?: boolean;
   template?: string;
   data?: string;
   out?: string;

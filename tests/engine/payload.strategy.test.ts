@@ -3,7 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createGenerator } from '../../src/create-generator';
-import { loadPayload } from '../../src/engine/payload';
+import { GenerateTemplateError } from '../../src/engine/errors';
+import { loadPayload, reviveDates, serializePayload } from '../../src/engine/payload';
 
 const tempDirs: string[] = [];
 
@@ -58,14 +59,34 @@ describe('payload strategy', () => {
     expect(await gen.render('welcome', { payload: { at: iso }, reviveDates: true })).toBe('object');
   });
 
-  it('loadPayload helper is async', async () => {
+  it('serializes and revives nested dates', () => {
+    const at = new Date('2026-02-01T00:00:00.000Z');
+    const serialized = serializePayload({ at, items: [{ at }] });
+    expect(serialized).toContain('"__date"');
+    const revived = reviveDates(JSON.parse(serialized)) as { at: Date; items: Array<{ at: Date }> };
+    expect(revived.at).toBeInstanceOf(Date);
+    expect(revived.items[0].at.toISOString()).toBe(at.toISOString());
+    expect(reviveDates(at)).toBe(at);
+  });
+
+  it('requires a file adapter for dataPath and useDataFiles', async () => {
     await expect(
       loadPayload({
         templateId: 'test',
-        catalog: [{ ids: ['test'], render: () => 'x' }],
+        dataPath: 'missing.json',
+        catalog: [{ ids: ['test'] }],
         samplePayloads: {},
         dataDir: '',
-      })
-    ).rejects.toThrow(/No payload for "test"/);
+      }),
+    ).rejects.toBeInstanceOf(GenerateTemplateError);
+    await expect(
+      loadPayload({
+        templateId: 'test',
+        catalog: [{ ids: ['test'] }],
+        samplePayloads: {},
+        dataDir: '',
+        useDataFiles: true,
+      }),
+    ).rejects.toMatchObject({ code: 'NO_PAYLOAD' });
   });
 });

@@ -3,7 +3,7 @@ import type { TemplateCatalogEntry } from '../engine/types';
 
 export function findEntry(
   catalog: TemplateCatalogEntry[],
-  templateId: string
+  templateId: string,
 ): TemplateCatalogEntry | undefined {
   if (!Array.isArray(catalog)) {
     throw new GenerateTemplateError('INVALID_CONFIG', 'catalog must be an array');

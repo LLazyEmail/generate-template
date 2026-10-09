@@ -32,6 +32,6 @@ export async function loadPayloadFromFiles(options: {
   throw new GenerateTemplateError(
     'NO_PAYLOAD',
     `No payload for "${templateId}". Pass payload, dataPath, or enable useDataFiles with ${path.join(dataDir, `${slugFromId(catalog, templateId)}.data.js`)}`,
-    templateId
+    templateId,
   );
 }

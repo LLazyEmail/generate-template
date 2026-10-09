@@ -7,7 +7,7 @@
   "private": false,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.18.0"
   },
   "bin": {
     "generate-template": "./dist/cli.js",
@@ -32,14 +32,27 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "sandbox": "npm run build && node --experimental-strip-types sandbox/example-usage.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "sandbox": "npm run build && node sandbox/example-usage.ts",
+    "version-packages": "changeset version",
+    "release": "node scripts/create-release.mjs",
     "prepublishOnly": "npm test && npm run build"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.7",
+    "@eslint/js": "^9.36.0",
     "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
     "tsup": "^8.3.5",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.44.0",
     "vitest": "^5.0.0"
   },
   "publishConfig": {

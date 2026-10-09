@@ -10,7 +10,7 @@ export default defineConfig([
     clean: true,
     splitting: false,
     sourcemap: true,
-    target: 'node20',
+    target: 'node22',
     outDir: 'dist',
     platform: 'node',
   },
@@ -23,7 +23,7 @@ export default defineConfig([
     dts: false,
     splitting: false,
     sourcemap: false,
-    target: 'node20',
+    target: 'node22',
     outDir: 'dist',
     platform: 'node',
     banner: {

@@ -30,7 +30,7 @@ export async function renderEntry(options: {
     throw new GenerateTemplateError(
       'UNKNOWN_TEMPLATE',
       `Unknown template id: "${templateId}". Available: ${availableIds(catalog).join(', ')}`,
-      templateId
+      templateId,
     );
   }
 
@@ -51,7 +51,7 @@ export async function renderEntry(options: {
       throw new GenerateTemplateError(
         'RENDER_FAILED',
         `Template "${templateId}" uses a file adapter. Pass allowFileTemplates: true or inject a render function.`,
-        templateId
+        templateId,
       );
     }
     return fileRenderer(ctx);
@@ -60,6 +60,6 @@ export async function renderEntry(options: {
   throw new GenerateTemplateError(
     'RENDER_FAILED',
     `Template "${templateId}" has no render function or file`,
-    templateId
+    templateId,
   );
 }

@@ -50,7 +50,12 @@ async function main(): Promise<void> {
       throw new Error(`missing file for ${entry.ids[0]}`);
     }
     written.push(result.path);
-    console.log('wrote', path.relative(sandboxRoot, result.path), fs.statSync(result.path).size, 'bytes');
+    console.log(
+      'wrote',
+      path.relative(sandboxRoot, result.path),
+      fs.statSync(result.path).size,
+      'bytes',
+    );
   }
 
   try {

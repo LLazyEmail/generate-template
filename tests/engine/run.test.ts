@@ -36,11 +36,20 @@ describe('engine.run contract (what other repos should call)', () => {
     expect(result.html).toBe('<h1>Sam</h1>');
   });
 
-  it('writes only when write is set', async () => {
+  it('writes only when write is set and renders once', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gt-run-write-'));
     tempDirs.push(dir);
+    let renders = 0;
     const gen = createGenerator({
-      catalog: [{ ids: ['welcome'], render: () => '<p>w</p>' }],
+      catalog: [
+        {
+          ids: ['welcome'],
+          render: () => {
+            renders += 1;
+            return '<p>w</p>';
+          },
+        },
+      ],
       samplePayloads: { welcome: {} },
       outDir: dir,
     });
@@ -48,6 +57,7 @@ describe('engine.run contract (what other repos should call)', () => {
       templateId: 'welcome',
       write: { out: path.join(dir, 'welcome.html') },
     });
+    expect(renders).toBe(1);
     expect(result.path).toBe(path.resolve(dir, 'welcome.html'));
     expect(fs.readFileSync(result.path as string, 'utf8')).toBe('<p>w</p>');
   });

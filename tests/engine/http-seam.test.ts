@@ -5,7 +5,7 @@ import type { GenerateRequest, GenerateResult } from '../../src/engine/types';
 
 async function handleGenerate(
   engine: ReturnType<typeof createGenerator>,
-  body: GenerateRequest
+  body: GenerateRequest,
 ): Promise<{ status: number; body: GenerateResult | { code: string; message: string } }> {
   try {
     return { status: 200, body: await engine.run(body) };

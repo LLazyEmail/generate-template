@@ -33,7 +33,7 @@ describe('Writer port', () => {
     tempDirs.push(dir);
     const writer = new Writer(dir);
     await expect(
-      writer.writeNamed({ templateId: 'x', html: '', slug: 'x', out: path.join(dir, 'x.html') })
+      writer.writeNamed({ templateId: 'x', html: '', slug: 'x', out: path.join(dir, 'x.html') }),
     ).rejects.toMatchObject({ code: 'WRITE_FAILED' } satisfies Partial<GenerateTemplateError>);
   });
 

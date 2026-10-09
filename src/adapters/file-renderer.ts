@@ -13,7 +13,7 @@ export function renderFromFile(ctx: RenderContext): string {
     throw new GenerateTemplateError(
       'RENDER_FAILED',
       `Template "${ctx.templateId}" has no file`,
-      ctx.templateId
+      ctx.templateId,
     );
   }
 
@@ -22,12 +22,17 @@ export function renderFromFile(ctx: RenderContext): string {
     throw new GenerateTemplateError(
       'RENDER_FAILED',
       `Template file missing: ${path.relative(ctx.root, modulePath)}`,
-      ctx.templateId
+      ctx.templateId,
     );
   }
 
   try {
-    return spawnTemplateModule(modulePath, ctx.entry.exportName ?? 'default', ctx.payload, ctx.root);
+    return spawnTemplateModule(
+      modulePath,
+      ctx.entry.exportName ?? 'default',
+      ctx.payload,
+      ctx.root,
+    );
   } catch (error) {
     if (error instanceof GenerateTemplateError) throw error;
     const message = error instanceof Error ? error.message : String(error);
@@ -35,8 +40,16 @@ export function renderFromFile(ctx: RenderContext): string {
   }
 }
 
-function spawnTemplateModule(modulePath: string, exportName: string, payload: unknown, root: string): string {
-  const payloadPath = path.join(os.tmpdir(), `generate-template-payload-${process.pid}-${Date.now()}.json`);
+function spawnTemplateModule(
+  modulePath: string,
+  exportName: string,
+  payload: unknown,
+  root: string,
+): string {
+  const payloadPath = path.join(
+    os.tmpdir(),
+    `generate-template-payload-${process.pid}-${Date.now()}.json`,
+  );
   fs.writeFileSync(payloadPath, serializePayload(payload), 'utf8');
   const source = `
 import { readFileSync } from 'node:fs';
@@ -74,7 +87,7 @@ function runStripTypes(source: string, root: string): string {
     const result = spawnSync(
       process.execPath,
       ['--experimental-strip-types', '--no-warnings', tmpFile],
-      { encoding: 'utf8', cwd: root, maxBuffer: 10 * 1024 * 1024 }
+      { encoding: 'utf8', cwd: root, maxBuffer: 10 * 1024 * 1024 },
     );
     if (result.status !== 0) {
       const err = (result.stderr || result.stdout || '').trim();
