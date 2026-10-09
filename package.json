@@ -43,7 +43,7 @@
     "prepublishOnly": "npm test && npm run build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
+    "@changesets/cli": "^3.0.0",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^5.0.0",
