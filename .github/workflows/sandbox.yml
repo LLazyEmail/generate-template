@@ -27,6 +27,8 @@ jobs:
         with:
           working-directory: .
           command: npm run sandbox
+          install-command: npm ci --no-audit --no-fund
+          node-version: 24
           artifact-directory: sandbox/generated
           upload-artifact: true
           artifact-name: sandbox-html-pr-${{ github.event.pull_request.number }}

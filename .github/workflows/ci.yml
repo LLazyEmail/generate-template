@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   test:
-    name: Typecheck, build, test
+    name: Typecheck, lint, build, coverage
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
