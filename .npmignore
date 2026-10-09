@@ -1,0 +1,5 @@
+# Allowlist is package.json "files". These paths stay out even if that list grows.
+sandbox/
+tests/
+src/
+.github/

@@ -5,9 +5,9 @@ This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 20**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Current version: **1.2.0**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+Current version: **1.5.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
 
-`1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release. `1.2.0` is this CLI fix.
+`1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release.
 
 ```bash
 npm install @llazyemail/generate-template
@@ -62,6 +62,16 @@ generate-template assert --slugs-file=tests/fixtures/generated-slugs.json --out=
 `--all` (also the default when `--template` is omitted) calls `writeAll(outDir)`. A single `--template` calls `run()`, so `--data=` still loads through the same `createGenerator` factory as the library. `generate-template-assert` is the assert command without the `assert` subcommand.
 
 Passing a generator to `main(argv, generator)` still skips the config file. That is what a project script can do. The bin itself always calls `main()` — it does not compare `argv[1]` to its own file, so an npm `.bin` symlink still runs.
+
+## Sandbox
+
+`sandbox/` is a local proof, not part of the package. It renders six simple HTML templates through `createGenerator` + `run()` and writes `sandbox/generated/`.
+
+```bash
+npm run sandbox
+```
+
+Open `sandbox/generated/index.html` after it succeeds. `package.json` `files` and `.npmignore` keep `sandbox/`, `src/`, and `tests/` out of the published tarball.
 
 ## Scripts
 
