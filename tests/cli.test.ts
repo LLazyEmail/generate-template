@@ -23,9 +23,20 @@ function tempDir(): string {
 
 describe('CLI adapter', () => {
   it('parses flags', () => {
-    expect(parseArgs(['--all', '--list', '--template=welcome', '--data=./p.json', '--out=out', '--config=gen.js'])).toEqual({
+    expect(
+      parseArgs([
+        '--all',
+        '--list',
+        '--help',
+        '--template=welcome',
+        '--data=./p.json',
+        '--out=out',
+        '--config=gen.js',
+      ]),
+    ).toEqual({
       all: true,
       list: true,
+      help: true,
       template: 'welcome',
       data: './p.json',
       out: 'out',
@@ -44,7 +55,10 @@ describe('CLI adapter', () => {
       samplePayloads: { welcome: {} },
       outDir: dir,
     });
-    const requests = requestsFromArgs(parseArgs(['--template=welcome', `--out=${path.join(dir, 'welcome.html')}`]), gen);
+    const requests = requestsFromArgs(
+      parseArgs(['--template=welcome', `--out=${path.join(dir, 'welcome.html')}`]),
+      gen,
+    );
     expect(requests).toEqual([
       {
         templateId: 'welcome',
@@ -108,6 +122,26 @@ describe('CLI adapter', () => {
     }
   });
 
+  it('--help prints usage and does not write', async () => {
+    const logs: string[] = [];
+    const log = console.log;
+    console.log = (message?: unknown) => logs.push(String(message));
+    try {
+      await main(['--help']);
+      expect(logs.join('\n')).toContain('generate-template — render a project catalog');
+    } finally {
+      console.log = log;
+    }
+  });
+
+  it('rejects a config that does not export a generator', async () => {
+    const dir = tempDir();
+    fs.writeFileSync(path.join(dir, 'bad.mjs'), 'export const generator = { catalog: [] };');
+    await expect(loadProjectGenerator({ cwd: dir, config: 'bad.mjs' })).rejects.toThrow(
+      /Invalid config/,
+    );
+  });
+
   it('loads createProjectGenerator from a config module', async () => {
     const dir = tempDir();
     fs.writeFileSync(
@@ -116,7 +150,10 @@ describe('CLI adapter', () => {
         return { catalog: [{ ids: ['welcome'] }], run() {}, writeAll() { return []; } };
       }`,
     );
-    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ generateTemplate: './other.mjs' }));
+    fs.writeFileSync(
+      path.join(dir, 'package.json'),
+      JSON.stringify({ generateTemplate: './other.mjs' }),
+    );
     expect(findConfigPath(dir)).toBe(path.join(dir, 'other.mjs'));
     fs.rmSync(path.join(dir, 'package.json'));
     const gen = await loadProjectGenerator({ cwd: dir });
@@ -127,12 +164,23 @@ describe('CLI adapter', () => {
     const dir = tempDir();
     fs.writeFileSync(path.join(dir, 'payload.js'), 'export default { name: "Ada" };');
     const gen = createGenerator({
-      catalog: [{ ids: ['welcome'], render: (payload) => `<html>${(payload as { name: string }).name}</html>` }],
+      catalog: [
+        {
+          ids: ['welcome'],
+          render: (payload) => `<html>${(payload as { name: string }).name}</html>`,
+        },
+      ],
       root: dir,
       dataDir: dir,
     });
-    await main(['--template=welcome', `--data=${path.join(dir, 'payload.js')}`, `--out=${path.join(dir, 'welcome.html')}`], gen);
+    await main(
+      [
+        '--template=welcome',
+        `--data=${path.join(dir, 'payload.js')}`,
+        `--out=${path.join(dir, 'welcome.html')}`,
+      ],
+      gen,
+    );
     expect(fs.readFileSync(path.join(dir, 'welcome.html'), 'utf8')).toBe('<html>Ada</html>');
   });
 });
-

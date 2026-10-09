@@ -41,4 +41,8 @@ export {
   slugsFromArgv,
   slugsFromGenerator,
 } from './assert-generated';
-export type { AssertGeneratedOptions, AssertGeneratedResult, RunAssertGeneratedOptions } from './assert-generated';
+export type {
+  AssertGeneratedOptions,
+  AssertGeneratedResult,
+  RunAssertGeneratedOptions,
+} from './assert-generated';

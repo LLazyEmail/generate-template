@@ -33,7 +33,9 @@ describe('createGenerator', () => {
     expect(gen.find('WELCOME')?.ids).toContain('welcome');
     expect(gen.ids()).toEqual(['welcome', 'WelcomeEmail']);
     expect(await gen.render('welcome')).toBe('<h1>Hello Alex</h1>');
-    expect(await gen.render('WelcomeEmail', { payload: { name: 'Sam' } })).toBe('<h1>Hello Sam</h1>');
+    expect(await gen.render('WelcomeEmail', { payload: { name: 'Sam' } })).toBe(
+      '<h1>Hello Sam</h1>',
+    );
   });
 
   it('renders objects that expose .render()', async () => {

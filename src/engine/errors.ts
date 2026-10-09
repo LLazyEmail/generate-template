@@ -1,9 +1,5 @@
 export type GenerateTemplateErrorCode =
-  | 'UNKNOWN_TEMPLATE'
-  | 'NO_PAYLOAD'
-  | 'RENDER_FAILED'
-  | 'WRITE_FAILED'
-  | 'INVALID_CONFIG';
+  'UNKNOWN_TEMPLATE' | 'NO_PAYLOAD' | 'RENDER_FAILED' | 'WRITE_FAILED' | 'INVALID_CONFIG';
 
 export class GenerateTemplateError extends Error {
   readonly code: GenerateTemplateErrorCode;

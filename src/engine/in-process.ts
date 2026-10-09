@@ -4,11 +4,17 @@ import type { RenderContext, TemplateRenderer } from './types';
 export async function invokeRenderer(
   renderer: TemplateRenderer,
   payload: unknown,
-  templateId?: string
+  templateId?: string,
 ): Promise<string> {
-  const html = await (typeof renderer === 'function' ? renderer(payload) : renderer.render(payload));
+  const html = await (typeof renderer === 'function'
+    ? renderer(payload)
+    : renderer.render(payload));
   if (typeof html !== 'string') {
-    throw new GenerateTemplateError('RENDER_FAILED', 'Template renderer must return a string', templateId);
+    throw new GenerateTemplateError(
+      'RENDER_FAILED',
+      'Template renderer must return a string',
+      templateId,
+    );
   }
   return html;
 }
@@ -18,7 +24,7 @@ export async function renderInProcess(ctx: RenderContext): Promise<string> {
     throw new GenerateTemplateError(
       'RENDER_FAILED',
       `Template "${ctx.templateId}" has no in-process render function`,
-      ctx.templateId
+      ctx.templateId,
     );
   }
   return invokeRenderer(ctx.entry.render, ctx.payload, ctx.templateId);

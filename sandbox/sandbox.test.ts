@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe('sandbox catalog works through the engine', () => {
-  it('renders every template and writes html', async () => {
+  it('renders every owned fixture and writes html', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gt-sandbox-'));
     tempDirs.push(dir);
     const generate = createGenerator({
@@ -23,7 +23,7 @@ describe('sandbox catalog works through the engine', () => {
       outDir: dir,
     });
 
-    expect(generate.catalog).toHaveLength(6);
+    expect(generate.catalog).toHaveLength(3);
 
     const welcome = await generate.run({ templateId: 'WelcomeEmail' });
     expect(welcome.html).toContain('Welcome, Alex');
@@ -37,9 +37,9 @@ describe('sandbox catalog works through the engine', () => {
       });
       expect(result.path).toBeTruthy();
       expect(fs.existsSync(result.path as string)).toBe(true);
-      expect(fs.readFileSync(result.path as string, 'utf8').length).toBeGreaterThan(50);
+      expect(fs.readFileSync(result.path as string, 'utf8')).toContain('<!DOCTYPE html>');
       paths.push(result.path);
     }
-    expect(paths).toHaveLength(6);
+    expect(paths).toHaveLength(3);
   });
 });

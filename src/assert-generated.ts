@@ -23,13 +23,18 @@ export interface AssertGeneratedResult {
   invalid: string[];
 }
 
-export function slugsFromGenerator(generator: Pick<TemplateGenerator, 'catalog' | 'slug'>): string[] {
+export function slugsFromGenerator(
+  generator: Pick<TemplateGenerator, 'catalog' | 'slug'>,
+): string[] {
   return generator.catalog.map((entry) => generator.slug(entry.ids[0]));
 }
 
 export function readSlugsFile(filePath: string): string[] {
   const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf8'));
-  if (!Array.isArray(parsed) || parsed.some((slug) => typeof slug !== 'string' || slug.length === 0)) {
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((slug) => typeof slug !== 'string' || slug.length === 0)
+  ) {
     throw new Error(`Slug file must be a JSON array of non-empty strings: ${filePath}`);
   }
   return parsed;
@@ -93,7 +98,8 @@ export function formatAssertGenerated(result: AssertGeneratedResult): string {
   }
   const lines: string[] = [];
   if (result.missing.length) lines.push(`Missing generated files:\n${result.missing.join('\n')}`);
-  if (result.invalid.length) lines.push(`Empty or non-HTML generated files:\n${result.invalid.join('\n')}`);
+  if (result.invalid.length)
+    lines.push(`Empty or non-HTML generated files:\n${result.invalid.join('\n')}`);
   return lines.join('\n');
 }
 
@@ -117,7 +123,10 @@ export function runAssertGenerated(options: RunAssertGeneratedOptions = {}): Ass
   const log = options.log ?? console.log;
   const error = options.error ?? console.error;
   const slugsFile = slugsFileFromArgv(argv);
-  const slugs = options.slugs ?? slugsFromArgv(argv) ?? (slugsFile ? readSlugsFile(path.resolve(cwd, slugsFile)) : undefined);
+  const slugs =
+    options.slugs ??
+    slugsFromArgv(argv) ??
+    (slugsFile ? readSlugsFile(path.resolve(cwd, slugsFile)) : undefined);
 
   if (!slugs) {
     const result: AssertGeneratedResult = {
@@ -127,7 +136,9 @@ export function runAssertGenerated(options: RunAssertGeneratedOptions = {}): Ass
       missing: [],
       invalid: [],
     };
-    error('Error: pass slugs via --slugs=a,b, --slugs-file=path.json, or runAssertGenerated({ slugs }).');
+    error(
+      'Error: pass slugs via --slugs=a,b, --slugs-file=path.json, or runAssertGenerated({ slugs }).',
+    );
     process.exitCode = 1;
     return result;
   }

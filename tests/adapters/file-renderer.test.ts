@@ -18,7 +18,7 @@ function fixtureDir(): string {
   tempDirs.push(dir);
   fs.writeFileSync(
     path.join(dir, 'hello.js'),
-    'export function hello(payload) { return `<p>${payload.n}</p>`; }\n'
+    'export function hello(payload) { return `<p>${payload.n}</p>`; }\n',
   );
   return dir;
 }

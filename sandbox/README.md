@@ -7,7 +7,7 @@ npm test
 npm run sandbox
 ```
 
-`npm run sandbox` uses `createGenerator` + `run()` against the six templates in `templates/`, writes HTML plus `index.html` and `rendered.txt` to `sandbox/generated/`, and fails if a render or write does not happen.
+`npm run sandbox` uses `createGenerator` + `run()` against three package-owned fixtures (`welcome`, `invoice`, `notice`), writes HTML plus `index.html` and `rendered.txt` to `sandbox/generated/`, and fails if a render or write does not happen.
 
 This directory is not published. `package.json` `files` is an allowlist (`dist`, `README.md`, `LICENSE`), and `.npmignore` also excludes `sandbox/`.
 

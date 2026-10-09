@@ -54,7 +54,7 @@ export class PayloadSource {
       useDataFiles: boolean;
       loadPayload?: PayloadLoader;
       loadFromFiles?: PayloadFromFiles;
-    }
+    },
   ) {}
 
   async load(templateId: string, dataPath?: string): Promise<unknown> {
@@ -97,7 +97,7 @@ export async function loadPayload(options: {
       throw new GenerateTemplateError(
         'NO_PAYLOAD',
         `No payload for "${templateId}". dataPath needs a loadFromFiles adapter.`,
-        templateId
+        templateId,
       );
     }
     return loadFromFiles({ templateId, dataPath, catalog, dataDir });
@@ -109,7 +109,7 @@ export async function loadPayload(options: {
       throw new GenerateTemplateError(
         'NO_PAYLOAD',
         `No payload for "${templateId}". useDataFiles needs a loadFromFiles adapter.`,
-        templateId
+        templateId,
       );
     }
     return loadFromFiles({ templateId, catalog, dataDir });
@@ -119,6 +119,6 @@ export async function loadPayload(options: {
     'NO_PAYLOAD',
     `No payload for "${templateId}". Pass payload, dataPath, samplePayloads, a loadPayload hook, or set useDataFiles.` +
       (dataDir ? ` (${slugFromId(catalog, templateId)}.data.js)` : ''),
-    templateId
+    templateId,
   );
 }

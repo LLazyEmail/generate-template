@@ -1,7 +1,12 @@
 import path from 'node:path';
 import { pathExists } from 'markup-generator';
 import { listTemplateFiles } from './adapters/list-files';
-import { runAssertGenerated, slugsFileFromArgv, slugsFromArgv, slugsFromGenerator } from './assert-generated';
+import {
+  runAssertGenerated,
+  slugsFileFromArgv,
+  slugsFromArgv,
+  slugsFromGenerator,
+} from './assert-generated';
 import { loadProjectGenerator } from './config';
 import { createGenerator } from './create-generator';
 import type { TemplateGenerator } from './engine';
@@ -18,6 +23,10 @@ export function parseArgs(argv: string[]): CliArgs {
       args.list = true;
       return;
     }
+    if (arg === '--help' || arg === '-h') {
+      args.help = true;
+      return;
+    }
     const match = arg.match(/^--([^=]+)=(.*)$/);
     if (match) {
       const key = match[1] as keyof CliArgs;
@@ -29,7 +38,9 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): GenerateRequest[] {
   const wantAll = args.all === true || !args.template || args.template === 'all';
-  const targets = wantAll ? generator.catalog.map((entry) => entry.ids[0]) : [args.template as string];
+  const targets = wantAll
+    ? generator.catalog.map((entry) => entry.ids[0])
+    : [args.template as string];
   return targets.map((templateId) => ({
     templateId,
     dataPath: wantAll ? undefined : args.data,
@@ -45,7 +56,10 @@ export function wantsAll(args: CliArgs): boolean {
   return args.all === true || !args.template || args.template === 'all';
 }
 
-async function resolveGenerator(generator: TemplateGenerator | undefined, args: CliArgs): Promise<TemplateGenerator> {
+async function resolveGenerator(
+  generator: TemplateGenerator | undefined,
+  args: CliArgs,
+): Promise<TemplateGenerator> {
   return generator ?? (await loadProjectGenerator({ config: args.config })) ?? createGenerator();
 }
 
@@ -56,7 +70,26 @@ function warnUncatalogued(gen: TemplateGenerator, templateFiles: string[]): void
   if (extra.length) console.warn(`Warning: template files not in catalog: ${extra.join(', ')}`);
 }
 
-export async function main(argv = process.argv.slice(2), generator?: TemplateGenerator): Promise<void> {
+export const USAGE = `generate-template — render a project catalog to HTML
+
+  generate-template --list
+  generate-template --template=welcome --data=src/data/welcome.data.js --out=generated/welcome.html
+  generate-template --all --out=generated
+  generate-template assert --slugs-file=tests/fixtures/generated-slugs.json --out=generated
+
+Config: --config=path, package.json "generateTemplate", or generate-template.config.js
+The module must export createProjectGenerator(), generator, or a default function that returns one.
+--help prints this message. With no flags and no config, nothing is generated.
+`;
+
+export async function main(
+  argv = process.argv.slice(2),
+  generator?: TemplateGenerator,
+): Promise<void> {
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(USAGE);
+    return;
+  }
   if (argv[0] === 'assert') {
     await runAssertCommand(argv.slice(1), generator);
     return;
@@ -64,11 +97,20 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
 
   const args = parseArgs(argv);
   const gen = await resolveGenerator(generator, args);
+  if (argv.length === 0 && gen.catalog.length === 0) {
+    console.error(USAGE);
+    process.exitCode = 1;
+    return;
+  }
   const templatesDir = gen.templatesDir;
-  const templateFiles = templatesDir ? listTemplateFiles(templatesDir, { skipFiles: gen.skipFiles }) : [];
+  const templateFiles = templatesDir
+    ? listTemplateFiles(templatesDir, { skipFiles: gen.skipFiles })
+    : [];
 
   if (args.list) {
-    console.log(`Files in ${templatesDir ? path.relative(gen.root, templatesDir) || templatesDir : '(no templatesDir)'}:`);
+    console.log(
+      `Files in ${templatesDir ? path.relative(gen.root, templatesDir) || templatesDir : '(no templatesDir)'}:`,
+    );
     templateFiles.forEach((file) => console.log(`  ${file}`));
     console.log('Generatable templates:');
     if (gen.catalog.length === 0) {
@@ -78,7 +120,7 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
         const exists = entry.render
           ? true
           : Boolean(entry.file && templatesDir && pathExists(path.join(templatesDir, entry.file)));
-        const source = entry.render ? 'renderer' : entry.file ?? '(no source)';
+        const source = entry.render ? 'renderer' : (entry.file ?? '(no source)');
         console.log(`  ${entry.ids.join(' | ')}  <- ${source}${exists ? '' : ' (missing)'}`);
       });
     }
@@ -86,7 +128,9 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
   }
 
   if (gen.catalog.length === 0) {
-    console.error('Error: No catalog configured. Add generate-template.config.js exporting createProjectGenerator(), or pass --config=.');
+    console.error(
+      'Error: No catalog configured. Add generate-template.config.js exporting createProjectGenerator(), or pass --config=.',
+    );
     process.exitCode = 1;
     return;
   }
@@ -106,6 +150,8 @@ export async function main(argv = process.argv.slice(2), generator?: TemplateGen
 async function runAssertCommand(argv: string[], generator?: TemplateGenerator): Promise<void> {
   const args = parseArgs(argv);
   const gen = generator ?? (await loadProjectGenerator({ config: args.config }));
-  const slugs = slugsFromArgv(argv) ?? (slugsFileFromArgv(argv) ? undefined : gen ? slugsFromGenerator(gen) : undefined);
+  const slugs =
+    slugsFromArgv(argv) ??
+    (slugsFileFromArgv(argv) ? undefined : gen ? slugsFromGenerator(gen) : undefined);
   runAssertGenerated({ argv, slugs });
 }

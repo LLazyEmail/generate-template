@@ -5,7 +5,11 @@ import { GenerateTemplateError } from '../../src/engine/errors';
 describe('Catalog port', () => {
   const catalog = new Catalog([
     { ids: ['welcome', 'WelcomeEmail'], render: () => 'w' },
-    { ids: ['password-reset', 'PasswordResetEmail'], file: 'password-reset.ts', exportName: 'reset' },
+    {
+      ids: ['password-reset', 'PasswordResetEmail'],
+      file: 'password-reset.ts',
+      exportName: 'reset',
+    },
   ]);
 
   it('finds aliases case-insensitively', () => {
