@@ -22,65 +22,47 @@ jobs:
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-node@v7
+      - name: Render sandbox through the shared action
+        uses: LLazyEmail/email-template-workflows@v1
         with:
-          node-version: 24
-
-      - name: Install
-        run: npm install --no-audit --no-fund
-
-      - name: Build package
-        run: npm run build
-
-      - name: Render sandbox templates
-        run: node --experimental-strip-types sandbox/example-usage.ts
+          working-directory: .
+          command: npm run sandbox
+          artifact-directory: sandbox/generated
+          upload-artifact: true
+          artifact-name: sandbox-html-pr-${{ github.event.pull_request.number }}
 
       - name: Require generated HTML
         run: |
           set -euo pipefail
-          test -d sandbox/generated
-          count=$(find sandbox/generated -name '*.html' | wc -l)
-          echo "generated $count html files"
-          find sandbox/generated -name '*.html' -printf '%p %s bytes\n'
+          test -s sandbox/generated/index.html
+          test -s sandbox/generated/rendered.txt
+          count=$(grep -c '<li>' sandbox/generated/index.html)
+          echo "indexed $count html files"
           test "$count" -ge 1
-
-      - name: Write index.html
-        run: |
-          set -euo pipefail
-          {
-            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sandbox emails</title></head><body>'
-            echo "<h1>Sandbox emails — PR #${{ github.event.pull_request.number }}</h1>"
-            echo '<ul>'
-            for f in sandbox/generated/*.html; do
-              name=$(basename "$f")
-              if [ "$name" = index.html ]; then continue; fi
-              echo "<li><a href=\"$name\">$name</a></li>"
-            done
-            echo '</ul></body></html>'
-          } > sandbox/generated/index.html
-
-      - name: Upload sandbox HTML
-        uses: actions/upload-artifact@v7
-        with:
-          name: sandbox-html-pr-${{ github.event.pull_request.number }}
-          path: sandbox/generated
-          if-no-files-found: error
-          retention-days: 14
 
       - name: Comment on the pull request
         uses: actions/github-script@v9
         with:
           script: |
+            const fs = require('fs');
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const list = fs.readFileSync('sandbox/generated/rendered.txt', 'utf8')
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => `- \`${line}\``)
+              .join('\n');
             const body = [
               '### Sandbox HTML',
               '',
-              'This PR rendered the sandbox templates.',
+              'This PR rendered the sandbox templates via `email-template-workflows`.',
+              '',
+              list,
               '',
               `- Run: ${runUrl}`,
               `- Artifact: \`sandbox-html-pr-${context.payload.pull_request.number}\``,
               '',
-              'Open the run → **Artifacts** → download → open `index.html` or any `*.html`.',
+              'Open the run → **Artifacts** → download → open `index.html`.',
             ].join('\n');
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
