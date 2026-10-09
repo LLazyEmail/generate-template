@@ -63,6 +63,20 @@ async function main(): Promise<void> {
     console.log('UNKNOWN_TEMPLATE surfaced as expected');
   }
 
+  const names = written.map((filePath) => path.basename(filePath));
+  const index = [
+    '<!DOCTYPE html>',
+    '<html><head><title>Sandbox</title></head><body>',
+    '<h1>generate-template sandbox</h1>',
+    '<ul>',
+    ...names.map((name) => `  <li><a href="${name}">${name}</a></li>`),
+    '</ul>',
+    '</body></html>',
+    '',
+  ].join('\n');
+  fs.writeFileSync(path.join(outDir, 'index.html'), index);
+  fs.writeFileSync(path.join(outDir, 'rendered.txt'), `${names.join('\n')}\n`);
+
   console.log(`sandbox ok — ${written.length} files in sandbox/generated/`);
 }
 
