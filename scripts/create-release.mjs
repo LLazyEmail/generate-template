@@ -4,8 +4,13 @@ import { execFileSync } from 'node:child_process';
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const tag = `v${version}`;
 
-execFileSync('chmod', ['+x', 'dist/cli.js', 'dist/assert-cli.js'], { stdio: 'inherit' });
-execFileSync('npm', ['publish'], { stdio: 'inherit' });
+try {
+  execFileSync('npm', ['publish'], { stdio: 'inherit' });
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!/previously published|cannot publish over|EPUBLISHCONFLICT/i.test(message)) throw error;
+  console.log(`${version} is already published`);
+}
 
 try {
   execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' });
