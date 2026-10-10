@@ -39,7 +39,7 @@
     "format:check": "prettier --check .",
     "sandbox": "npm run build && node sandbox/example-usage.ts",
     "version-packages": "changeset version",
-    "release": "node scripts/create-release.mjs",
+    "release": "changeset publish",
     "prepublishOnly": "npm test && npm run build && chmod +x dist/cli.js dist/assert-cli.js"
   },
   "devDependencies": {
