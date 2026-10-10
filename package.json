@@ -1,6 +1,6 @@
 {
   "name": "@llazyemail/generate-template",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Configurable engine for rendering named email templates to HTML.",
   "author": "Arthur Tkachenko",
   "license": "MIT",
@@ -40,7 +40,7 @@
     "sandbox": "npm run build && node sandbox/example-usage.ts",
     "version-packages": "changeset version",
     "release": "node scripts/create-release.mjs",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build && chmod +x dist/cli.js dist/assert-cli.js"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.0",
