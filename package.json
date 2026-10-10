@@ -10,8 +10,8 @@
     "node": ">=22.18.0"
   },
   "bin": {
-    "generate-template": "./dist/cli.js",
-    "generate-template-assert": "./dist/assert-cli.js"
+    "generate-template": "dist/cli.js",
+    "generate-template-assert": "dist/assert-cli.js"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
