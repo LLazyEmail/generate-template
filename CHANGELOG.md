@@ -1,5 +1,11 @@
 # @llazyemail/generate-template
 
+## 1.6.1
+
+### Patch Changes
+
+- Keep `generate-template` and `generate-template-assert` in the published package. npm was dropping the bin entries.
+
 ## 1.6.0
 
 ### Minor Changes
