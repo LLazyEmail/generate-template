@@ -1,3 +1,4 @@
+```
 diff --git a/.changeset/simplify-internals.md b/.changeset/simplify-internals.md
 new file mode 100644
 index 0000000..69158c0
@@ -289,3 +290,5 @@ index d66f0f4..e7630ec 100644
 -  return new GenerateTemplateError('WRITE_FAILED', message, templateId);
 +  return new GenerateTemplateError('WRITE_FAILED', errorMessage(error), templateId);
  }
+
+```
