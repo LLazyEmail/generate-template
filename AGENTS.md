@@ -31,7 +31,7 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 | `src/persist/`                    | `Writer`; all generated-file writes go through `markup-generator`                                                               |
 | `src/adapters/`                   | Opt-in file renderer (spawn), `.data.js` payload files, CLI file listing                                                        |
 | `src/cli.ts`                      | `parseArgs`, `main`, `wantsAll`, `USAGE`; flags `--list --all --template= --data= --out= --config=` and the `assert` subcommand |
-| `src/config.ts`                   | Config discovery and module contract for the bins                                                                               |
+| `src/config/`                     | Config discovery and module contract for the bins                                                                               |
 | `src/assert-generated.ts`         | Generated-HTML check (pure function + CLI adapter)                                                                              |
 | `src/bin.ts`, `src/bin-assert.ts` | Thin bin entries; no argv self-check                                                                                            |
 | `sandbox/`                        | Package-owned fixtures and live proof; never published                                                                          |
@@ -54,18 +54,18 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 
 ## Task router
 
-| Task                                        | Read first                      | Edit                                 | Verify                                          |
-| ------------------------------------------- | ------------------------------- | ------------------------------------ | ----------------------------------------------- |
-| Engine behavior (render/run/payload/errors) | `src/engine/*.ts` + mirror test | same                                 | `npx vitest run tests/engine`                   |
-| CLI flags / usage text                      | `src/cli.ts`                    | `src/cli.ts`, `tests/cli.test.ts`    | `npx vitest run tests/cli.test.ts`              |
-| Config discovery / module contract          | `src/config.ts`                 | `src/config.ts`, `tests/cli.test.ts` | `npx vitest run tests/cli.test.ts`              |
-| Assert command                              | `src/assert-generated.ts`       | + `tests/assert-generated.test.ts`   | `npx vitest run tests/assert-generated.test.ts` |
-| Slug / id lookup                            | `src/catalog/resolve.ts`        | + `tests/catalog/catalog.test.ts`    | `npx vitest run tests/catalog`                  |
-| Write / persist                             | `src/persist/writer.ts`         | + `tests/persist/writer.test.ts`     | `npx vitest run tests/persist`                  |
-| File renderer / data files                  | `src/adapters/`                 | + mirror tests                       | `npx vitest run tests/adapters`                 |
-| Sandbox fixture / proof                     | `sandbox/example-catalog.ts`    | + `sandbox/example-usage.ts`         | `npm run sandbox`                               |
-| Public exports                              | `src/index.ts`                  | + `tests/index.test.ts`              | `npx vitest run tests/index.test.ts`            |
-| Multi-file change                           | `docs/recipes.md`               | per recipe                           | per recipe                                      |
+| Task                                        | Read first                      | Edit                               | Verify                                          |
+| ------------------------------------------- | ------------------------------- | ---------------------------------- | ----------------------------------------------- |
+| Engine behavior (render/run/payload/errors) | `src/engine/*.ts` + mirror test | same                               | `npx vitest run tests/engine`                   |
+| CLI flags / usage text                      | `src/cli.ts`                    | `src/cli.ts`, `tests/cli.test.ts`  | `npx vitest run tests/cli.test.ts`              |
+| Config discovery / module contract          | `src/config/`                   | `src/config/`, `tests/cli.test.ts` | `npx vitest run tests/cli.test.ts`              |
+| Assert command                              | `src/assert-generated.ts`       | + `tests/assert-generated.test.ts` | `npx vitest run tests/assert-generated.test.ts` |
+| Slug / id lookup                            | `src/catalog/resolve.ts`        | + `tests/catalog/catalog.test.ts`  | `npx vitest run tests/catalog`                  |
+| Write / persist                             | `src/persist/writer.ts`         | + `tests/persist/writer.test.ts`   | `npx vitest run tests/persist`                  |
+| File renderer / data files                  | `src/adapters/`                 | + mirror tests                     | `npx vitest run tests/adapters`                 |
+| Sandbox fixture / proof                     | `sandbox/example-catalog.ts`    | + `sandbox/example-usage.ts`       | `npm run sandbox`                               |
+| Public exports                              | `src/index.ts`                  | + `tests/index.test.ts`            | `npx vitest run tests/index.test.ts`            |
+| Multi-file change                           | `docs/recipes.md`               | per recipe                         | per recipe                                      |
 
 ## Do not
 
