@@ -5,7 +5,7 @@ import {
   writeGeneratedEmail,
   writeGeneratedFile,
 } from 'markup-generator';
-import { GenerateTemplateError } from '../engine/errors';
+import { GenerateTemplateError, errorMessage } from '../engine/errors';
 
 export class Writer {
   constructor(readonly outDir: string) {}
@@ -68,6 +68,5 @@ export function wrapWriteError(error: unknown, templateId?: string): GenerateTem
   if (error instanceof MarkupGeneratorError) {
     return new GenerateTemplateError('WRITE_FAILED', `${error.code}: ${error.message}`, templateId);
   }
-  const message = error instanceof Error ? error.message : String(error);
-  return new GenerateTemplateError('WRITE_FAILED', message, templateId);
+  return new GenerateTemplateError('WRITE_FAILED', errorMessage(error), templateId);
 }

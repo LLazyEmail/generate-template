@@ -2,21 +2,14 @@ import { slugFromId } from '../catalog';
 import { GenerateTemplateError } from './errors';
 import type { PayloadFromFiles, PayloadLoader, TemplateCatalogEntry } from './types';
 
+/**
+ * `Date#toJSON` runs before a replacer sees the value, so the raw value is read from `this`.
+ */
 export function serializePayload(payload: unknown): string {
-  return JSON.stringify(replaceDates(payload));
-}
-
-function replaceDates(value: unknown): unknown {
-  if (value instanceof Date) return { __date: value.toISOString() };
-  if (Array.isArray(value)) return value.map(replaceDates);
-  if (value && typeof value === 'object') {
-    const next: Record<string, unknown> = {};
-    for (const [key, current] of Object.entries(value as Record<string, unknown>)) {
-      next[key] = replaceDates(current);
-    }
-    return next;
-  }
-  return value;
+  return JSON.stringify(payload, function (this: Record<string, unknown>, key, value) {
+    const raw = this[key];
+    return raw instanceof Date ? { __date: raw.toISOString() } : value;
+  });
 }
 
 export function reviveDates(value: unknown): unknown {

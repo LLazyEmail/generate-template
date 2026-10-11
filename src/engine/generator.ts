@@ -7,6 +7,7 @@ import type {
   FileRenderer,
   GenerateRequest,
   GenerateResult,
+  GenerateWriteOptions,
   GeneratorConfig,
   RenderOptions,
   TemplateCatalogEntry,
@@ -92,8 +93,11 @@ export class TemplateGenerator {
     return this.writer.writeFile(outPath, html, templateId);
   }
 
-  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
-    const html = await this.render(templateId, options);
+  private persist(
+    templateId: string,
+    html: string,
+    options: GenerateWriteOptions,
+  ): Promise<string> {
     return this.writer.writeNamed({
       templateId,
       html,
@@ -101,6 +105,11 @@ export class TemplateGenerator {
       out: options.out,
       uniqueName: options.uniqueName,
     });
+  }
+
+  async write(templateId: string, options: WriteOptions = {}): Promise<string> {
+    const html = await this.render(templateId, options);
+    return this.persist(templateId, html, options);
   }
 
   async writeAll(outDir = this.outDir): Promise<string[]> {
@@ -126,14 +135,11 @@ export class TemplateGenerator {
       html,
     };
     if (request.write) {
-      const writeOpts = request.write === true ? {} : request.write;
-      result.path = await this.writer.writeNamed({
-        templateId: request.templateId,
+      result.path = await this.persist(
+        request.templateId,
         html,
-        slug: this.slug(request.templateId),
-        out: writeOpts.out,
-        uniqueName: writeOpts.uniqueName,
-      });
+        request.write === true ? {} : request.write,
+      );
     }
     return result;
   }
