@@ -1,4 +1,5 @@
 import type { TemplateGenerator } from '../engine';
+import { GenerateTemplateError } from '../engine/errors';
 
 export function isTemplateGenerator(value: unknown): value is TemplateGenerator {
   if (!value || typeof value !== 'object') return false;
@@ -16,7 +17,8 @@ export async function generatorFromModule(
   const exported = mod.createProjectGenerator ?? mod.generator ?? mod.default;
   const value = typeof exported === 'function' ? await exported() : exported;
   if (!isTemplateGenerator(value)) {
-    throw new Error(
+    throw new GenerateTemplateError(
+      'CONFIG_INVALID',
       'Config must export createProjectGenerator(), a generator, or a default function that returns one.',
     );
   }

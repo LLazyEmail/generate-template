@@ -15,7 +15,7 @@ Verify: `npx vitest run tests/cli.test.ts`, then `npm run build && node dist/cli
 1. `src/engine/errors.ts` — extend `GenerateTemplateErrorCode`.
 2. Throw site — `new GenerateTemplateError('NEW_CODE', message, templateId)`.
 3. `tests/engine/errors.test.ts` plus the test of the module that throws.
-4. Update the code list in `README.md` and the contracts section of `AGENTS.md`.
+4. Update the code lists in `README.md`, the contracts section of `AGENTS.md`, and the error table in `docs/architecture.md`.
 
 Verify: `npx vitest run tests/engine`. The HTTP-seam test maps any `GenerateTemplateError` to 400 + code generically, so it keeps passing.
 

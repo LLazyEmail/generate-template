@@ -47,7 +47,7 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 4. Lookup is case-insensitive over all `ids`; slug = first id of the matched entry, trailing `Email` stripped, camelCase → kebab-case, lowercased (`src/catalog/resolve.ts`).
 5. Payload order: request `payload` → `dataPath` → `samplePayloads[templateId]` (exact key, must be truthy) → data files when `useDataFiles` → `NO_PAYLOAD`.
 6. Render order: `entry.render` → `entry.file` (requires `allowFileTemplates: true`) → `RENDER_FAILED`.
-7. Failures are `GenerateTemplateError` with `code`: `UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG`.
+7. Failures are `GenerateTemplateError` with `code`: `UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG` | `CONFIG_NOT_FOUND` | `CONFIG_IMPORT_FAILED` | `CONFIG_INVALID`.
 8. Dates stay JSON-safe (`{ "__date": iso }` marker); revival happens only with `reviveDates: true`.
 9. Fixtures live in `sandbox/`, never in `src/`. `package.json` `files` is the publish allowlist; `tests/publish-files.test.ts` enforces it.
 10. Versions move via `npx changeset` — never hand-edit `package.json` version.

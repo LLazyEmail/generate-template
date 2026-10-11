@@ -66,17 +66,20 @@ Config — `findConfigPath` in `src/config/`:
 2. `package.json` `generateTemplate` string.
 3. First existing `generate-template.config.{js,mjs,cjs,ts}`.
 
-Importing a `.ts` config requires Node >= 22.18 (native type stripping); older runtimes get a dedicated error.
+Importing a `.ts` config requires Node >= 22.18 (native type stripping); older runtimes get a `CONFIG_IMPORT_FAILED` error. A missing `--config=` file is `CONFIG_NOT_FOUND`; a module without a generator is `CONFIG_INVALID`.
 
 ## Error sites
 
-| Code               | Thrown in                                                                           | Trigger                                                                                     |
-| ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `INVALID_CONFIG`   | `src/catalog/resolve.ts`                                                            | `catalog` is not an array                                                                   |
-| `UNKNOWN_TEMPLATE` | `src/engine/render.ts`                                                              | id not found in catalog                                                                     |
-| `NO_PAYLOAD`       | `src/engine/payload.ts`, `src/adapters/payload-files.ts`                            | no payload source, or `dataPath` file unreadable                                            |
-| `RENDER_FAILED`    | `src/engine/render.ts`, `src/engine/in-process.ts`, `src/adapters/file-renderer.ts` | no renderer; file template without adapter; non-string renderer result; spawn failure       |
-| `WRITE_FAILED`     | `src/persist/writer.ts`                                                             | any `markup-generator`/fs failure; `MarkupGeneratorError` code is prefixed into the message |
+| Code                   | Thrown in                                                                           | Trigger                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `INVALID_CONFIG`       | `src/catalog/resolve.ts`                                                            | `catalog` is not an array                                                                   |
+| `UNKNOWN_TEMPLATE`     | `src/engine/render.ts`                                                              | id not found in catalog                                                                     |
+| `NO_PAYLOAD`           | `src/engine/payload.ts`, `src/adapters/payload-files.ts`                            | no payload source, or `dataPath` file unreadable                                            |
+| `RENDER_FAILED`        | `src/engine/render.ts`, `src/engine/in-process.ts`, `src/adapters/file-renderer.ts` | no renderer; file template without adapter; non-string renderer result; spawn failure       |
+| `WRITE_FAILED`         | `src/persist/writer.ts`                                                             | any `markup-generator`/fs failure; `MarkupGeneratorError` code is prefixed into the message |
+| `CONFIG_NOT_FOUND`     | `src/config/load.ts`                                                                | explicit `--config=` path does not exist                                                    |
+| `CONFIG_IMPORT_FAILED` | `src/config/load.ts`                                                                | config module failed to import (syntax error; `.ts` on Node < 22.18)                        |
+| `CONFIG_INVALID`       | `src/config/load.ts`, `src/config/module.ts`                                        | module loaded but does not export a generator                                               |
 
 ## CLI reference
 

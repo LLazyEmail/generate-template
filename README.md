@@ -37,7 +37,7 @@ const result = await generate.run({ templateId: 'welcome', payload: { name: 'Ale
 ```
 
 `run(request)` is the contract a future HTTP handler wraps. Failures are `GenerateTemplateError` with `code`:
-`UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG`.
+`UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG` | `CONFIG_NOT_FOUND` | `CONFIG_IMPORT_FAILED` | `CONFIG_INVALID`.
 
 `render` / `loadPayload` are async. File catalog entries need `allowFileTemplates: true` (prefer injected `render`).
 
@@ -52,7 +52,7 @@ The bin loads a project catalog. It does not ship one.
 export { createProjectGenerator } from './scripts/create-project-generator.js';
 ```
 
-Or set `package.json` `"generateTemplate": "./scripts/create-project-generator.js"`. That module must export `createProjectGenerator()`, `generator`, or a default function returning a generator. `--config=` overrides the search.
+Or set `package.json` `"generateTemplate": "./scripts/create-project-generator.js"`. That module must export `createProjectGenerator()`, `generator`, or a default function returning a generator. `--config=` overrides the search. A missing or invalid config throws `GenerateTemplateError` with `CONFIG_NOT_FOUND`, `CONFIG_IMPORT_FAILED`, or `CONFIG_INVALID`.
 
 ```bash
 generate-template --help

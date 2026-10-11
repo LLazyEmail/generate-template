@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import type { TemplateGenerator } from '../engine';
+import { GenerateTemplateError } from '../engine/errors';
 import { findConfigPath } from './find-config';
 import { generatorFromModule } from './module';
 
@@ -15,7 +16,9 @@ export async function loadProjectGenerator(
   const cwd = options.cwd ?? process.cwd();
   const file = findConfigPath(cwd, options.config);
   if (!file) return undefined;
-  if (!existsSync(file)) throw new Error(`Config not found: ${file}`);
+  if (!existsSync(file)) {
+    throw new GenerateTemplateError('CONFIG_NOT_FOUND', `Config not found: ${file}`);
+  }
   try {
     const imported = (await import(pathToFileURL(file).href)) as Record<string, unknown>;
     return await loadFromModule(file, imported);
@@ -32,14 +35,18 @@ async function loadFromModule(
     return await generatorFromModule(mod);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid config ${file}: ${message}`);
+    throw new GenerateTemplateError('CONFIG_INVALID', `Invalid config ${file}: ${message}`);
   }
 }
 
-function describeConfigError(file: string, error: unknown): Error {
+function describeConfigError(file: string, error: unknown): GenerateTemplateError {
   const message = error instanceof Error ? error.message : String(error);
   if (file.endsWith('.ts') && /unknown file extension|ERR_UNKNOWN_FILE_EXTENSION/i.test(message)) {
-    return new Error(`Cannot import ${file}. Node >= 22.18 is required for a .ts config.`);
+    return new GenerateTemplateError(
+      'CONFIG_IMPORT_FAILED',
+      `Cannot import ${file}. Node >= 22.18 is required for a .ts config.`,
+    );
   }
-  return error instanceof Error ? error : new Error(message);
+  if (error instanceof GenerateTemplateError) return error;
+  return new GenerateTemplateError('CONFIG_IMPORT_FAILED', message);
 }
