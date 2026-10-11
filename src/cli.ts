@@ -37,7 +37,7 @@ export function parseArgs(argv: string[]): CliArgs {
 }
 
 export function requestsFromArgs(args: CliArgs, generator: TemplateGenerator): GenerateRequest[] {
-  const wantAll = args.all === true || !args.template || args.template === 'all';
+  const wantAll = wantsAll(args);
   const targets = wantAll
     ? generator.catalog.map((entry) => entry.ids[0])
     : [args.template as string];

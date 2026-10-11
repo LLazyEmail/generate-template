@@ -23,3 +23,8 @@ export class GenerateTemplateError extends Error {
 export function isGenerateTemplateError(error: unknown): error is GenerateTemplateError {
   return error instanceof GenerateTemplateError;
 }
+
+/** Message of anything that was thrown. Internal; not part of the public API. */
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

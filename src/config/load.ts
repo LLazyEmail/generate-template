@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import type { TemplateGenerator } from '../engine';
-import { GenerateTemplateError } from '../engine/errors';
+import { GenerateTemplateError, errorMessage } from '../engine/errors';
 import { findConfigPath } from './find-config';
 import { generatorFromModule } from './module';
 
@@ -34,13 +34,15 @@ async function loadFromModule(
   try {
     return await generatorFromModule(mod);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new GenerateTemplateError('CONFIG_INVALID', `Invalid config ${file}: ${message}`);
+    throw new GenerateTemplateError(
+      'CONFIG_INVALID',
+      `Invalid config ${file}: ${errorMessage(error)}`,
+    );
   }
 }
 
 function describeConfigError(file: string, error: unknown): GenerateTemplateError {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorMessage(error);
   if (file.endsWith('.ts') && /unknown file extension|ERR_UNKNOWN_FILE_EXTENSION/i.test(message)) {
     return new GenerateTemplateError(
       'CONFIG_IMPORT_FAILED',

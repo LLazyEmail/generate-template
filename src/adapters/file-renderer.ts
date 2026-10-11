@@ -1,9 +1,7 @@
 import { spawnSync } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { pathExists } from 'markup-generator';
-import { GenerateTemplateError } from '../engine/errors';
+import { GenerateTemplateError, errorMessage } from '../engine/errors';
 import { serializePayload } from '../engine/payload';
 import type { RenderContext } from '../engine/types';
 
@@ -35,8 +33,7 @@ export function renderFromFile(ctx: RenderContext): string {
     );
   } catch (error) {
     if (error instanceof GenerateTemplateError) throw error;
-    const message = error instanceof Error ? error.message : String(error);
-    throw new GenerateTemplateError('RENDER_FAILED', message, ctx.templateId);
+    throw new GenerateTemplateError('RENDER_FAILED', errorMessage(error), ctx.templateId);
   }
 }
 
@@ -46,11 +43,7 @@ function spawnTemplateModule(
   payload: unknown,
   root: string,
 ): string {
-  const payloadPath = path.join(
-    os.tmpdir(),
-    `generate-template-payload-${process.pid}-${Date.now()}.json`,
-  );
-  fs.writeFileSync(payloadPath, serializePayload(payload), 'utf8');
+  // The payload goes over stdin and the script over `-e`, so no temp files are written.
   const source = `
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -66,35 +59,26 @@ function revive(value) {
   }
   return value;
 }
-const raw = JSON.parse(readFileSync(${JSON.stringify(payloadPath)}, 'utf8'));
+const raw = JSON.parse(readFileSync(0, 'utf8'));
 const mod = await import(pathToFileURL(${JSON.stringify(modulePath)}).href);
 const exported = mod[${JSON.stringify(exportName)}] ?? mod.default;
 if (!exported) throw new Error('Export missing');
 const html = typeof exported === 'function' ? exported(revive(raw)) : exported.render(revive(raw));
 process.stdout.write(html);
 `;
-  try {
-    return runStripTypes(source, root);
-  } finally {
-    fs.rmSync(payloadPath, { force: true });
+  const result = spawnSync(
+    process.execPath,
+    ['--experimental-strip-types', '--no-warnings', '--input-type=module', '-e', source],
+    {
+      input: serializePayload(payload),
+      encoding: 'utf8',
+      cwd: root,
+      maxBuffer: 10 * 1024 * 1024,
+    },
+  );
+  if (result.status !== 0) {
+    const err = (result.stderr || result.stdout || '').trim();
+    throw new Error(err || `node exited ${result.status}`);
   }
-}
-
-function runStripTypes(source: string, root: string): string {
-  const tmpFile = path.join(os.tmpdir(), `generate-template-${process.pid}-${Date.now()}.mts`);
-  fs.writeFileSync(tmpFile, source, 'utf8');
-  try {
-    const result = spawnSync(
-      process.execPath,
-      ['--experimental-strip-types', '--no-warnings', tmpFile],
-      { encoding: 'utf8', cwd: root, maxBuffer: 10 * 1024 * 1024 },
-    );
-    if (result.status !== 0) {
-      const err = (result.stderr || result.stdout || '').trim();
-      throw new Error(err || `node exited ${result.status}`);
-    }
-    return result.stdout;
-  } finally {
-    fs.rmSync(tmpFile, { force: true });
-  }
+  return result.stdout;
 }

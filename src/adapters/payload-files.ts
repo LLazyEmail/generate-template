@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { loadData, pathExists } from 'markup-generator';
-import { GenerateTemplateError } from '../engine/errors';
+import { GenerateTemplateError, errorMessage } from '../engine/errors';
 import type { TemplateCatalogEntry } from '../engine/types';
 import { slugFromId } from '../catalog';
 
@@ -16,8 +16,7 @@ export async function loadPayloadFromFiles(options: {
     try {
       return await loadData(path.resolve(process.cwd(), dataPath));
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new GenerateTemplateError('NO_PAYLOAD', message, templateId);
+      throw new GenerateTemplateError('NO_PAYLOAD', errorMessage(error), templateId);
     }
   }
 
