@@ -4,6 +4,13 @@ Generic engine that turns named email templates into HTML. It ships **no templat
 
 Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs+esm; bins esm) · GitHub Packages · Changesets.
 
+## Ecosystem boundaries (do not reimplement)
+
+- This package owns catalog, payload resolution, `run`/`writeAll`, and writes via `markup-generator`.
+- `@llazyemail/render-template` owns the part/compose runtime (string parts, traces, error modes).
+- `@llazyemail/template-runtime-display` owns email shell fragments on top of that runtime.
+- Consumers (Lit, React, etc.) should only supply `render` functions. Local pipelines that re-do validation + render + write are duplication and should be replaced by a `createGenerator` catalog.
+
 ## Verify — cheapest first
 
 | You changed                           | Run                                     | Skip                          |
