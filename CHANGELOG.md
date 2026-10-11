@@ -1,5 +1,11 @@
 # @llazyemail/generate-template
 
+## 1.7.0
+
+### Minor Changes
+
+- bfbe83a: Type config-loading failures as `GenerateTemplateError` and add `CONFIG_NOT_FOUND`, `CONFIG_IMPORT_FAILED`, and `CONFIG_INVALID` codes.
+
 ## 1.6.1
 
 ### Patch Changes
