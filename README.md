@@ -17,6 +17,16 @@ npm install @llazyemail/generate-template
 
 Installs need a `read:packages` token. See `.npmrc.example`.
 
+## Package ecosystem
+
+This is the **generation** layer. It owns catalog lookup, payload resolution, the `run`/`writeAll` contract, and disk writes.
+
+- `@llazyemail/render-template` — low-level deterministic part/compose renderer (string parts only).
+- `@llazyemail/template-runtime-display` — email shell fragments + runtime that builds on `render-template`.
+- Consumer projects (e.g. `_playing_with_lit`) should inject their own `render` functions (Lit SSR, React, etc.) into `createGenerator` rather than reimplementing catalog, payload, or write logic locally.
+
+Local `BuildPipeline`-style classes that reimplement validation + render + write are duplication. Prefer a catalog entry whose `render` calls your existing renderer, then `generate.run({ templateId, payload })`.
+
 ## Public API
 
 ```ts
