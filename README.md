@@ -5,7 +5,9 @@ This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 22.18**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Current version: **1.5.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+Working on this repo with an AI agent? Start at [AGENTS.md](https://github.com/LLazyEmail/generate-template/blob/main/AGENTS.md).
+
+Current version: **1.6.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
 
 `1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release.
 
