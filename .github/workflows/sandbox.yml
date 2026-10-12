@@ -23,15 +23,17 @@ jobs:
           fetch-depth: 1
 
       - name: Render sandbox through the shared action
-        uses: LLazyEmail/email-template-workflows@v1
+        uses: LLazyEmail/email-template-workflows@v2.0.0
         with:
           working-directory: .
+          package-manager: npm
           command: npm run sandbox
           install-command: npm ci --no-audit --no-fund
           node-version: 24
           artifact-directory: sandbox/generated
           upload-artifact: true
           artifact-name: sandbox-html-pr-${{ github.event.pull_request.number }}
+          job-summary: true
 
       - name: Require generated HTML
         run: |
