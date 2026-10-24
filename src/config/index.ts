@@ -1,3 +1,3 @@
-export { CONFIG_CANDIDATES, findConfigPath } from './find-config';
-export { generatorFromModule, isTemplateGenerator } from './module';
+export { findConfigPath } from './find-config';
+export { generatorFromModule } from './module';
 export { loadProjectGenerator } from './load';
