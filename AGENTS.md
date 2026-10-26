@@ -1,15 +1,25 @@
 # Agent Guide — @llazyemail/generate-template
 
-Generic engine that turns named email templates into HTML. It ships **no templates**: consumers pass a catalog (`ids` + `render`) and payloads to `createGenerator`. Ground truth: `src/` for behavior, `tests/` for contracts, `package.json` for the published surface.
+Generic engine that turns named email templates into HTML. It ships **no templates**: consumers pass a catalog (`ids` + `render`) and payloads to `createGenerator`.
+
+**Start here for AI agents.** Ground truth: `src/` for behavior, `tests/` for contracts, `package.json` for the published surface.
 
 Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs+esm; bins esm) · GitHub Packages · Changesets.
+
+## Organization context (read this first)
+
+This package is the generation layer used by LLazyEmail template repositories.
+
+- **Primary consumers today**: `postmark-transactional-template-simple` (pins 1.6.1), `_playing_with_lit`.
+- Full organization diagram and integration pattern: [`docs/organization-schema.md`](docs/organization-schema.md).
+- Do not reimplement catalog / payload / write logic in consumer repos. Inject `render` functions instead.
 
 ## Ecosystem boundaries (do not reimplement)
 
 - This package owns catalog, payload resolution, `run`/`writeAll`, and writes via `markup-generator`.
 - `@llazyemail/render-template` owns the part/compose runtime (string parts, traces, error modes).
 - `@llazyemail/template-runtime-display` owns email shell fragments on top of that runtime.
-- Consumers (Lit, React, etc.) should only supply `render` functions. Local pipelines that re-do validation + render + write are duplication and should be replaced by a `createGenerator` catalog.
+- Consumers (Lit, React, Postmark document renderers, etc.) should only supply `render` functions. Local pipelines that re-do validation + render + write are duplication and should be replaced by a `createGenerator` catalog.
 
 ## Verify — cheapest first
 
@@ -43,7 +53,7 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 | `src/bin.ts`, `src/bin-assert.ts` | Thin bin entries; no argv self-check                                                                                            |
 | `sandbox/`                        | Package-owned fixtures and live proof; never published                                                                          |
 | `tests/`                          | Unit contracts mirroring `src/`                                                                                                 |
-| `docs/`                           | On-demand agent docs (see below)                                                                                                |
+| `docs/`                           | On-demand agent docs (architecture, recipes, organization schema)                                                               |
 | `.changeset/`                     | Pending release notes                                                                                                           |
 
 ## Contracts (must hold)
@@ -73,6 +83,7 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 | Sandbox fixture / proof                     | `sandbox/example-catalog.ts`    | + `sandbox/example-usage.ts`       | `npm run sandbox`                               |
 | Public exports                              | `src/index.ts`                  | + `tests/index.test.ts`            | `npx vitest run tests/index.test.ts`            |
 | Multi-file change                           | `docs/recipes.md`               | per recipe                         | per recipe                                      |
+| Organization / consumer integration         | `docs/organization-schema.md`   | docs only                          | —                                               |
 
 ## Do not
 
@@ -84,6 +95,7 @@ Facts: TypeScript ESM · Node >= 22.18 · npm · Vitest · tsup → `dist/` (cjs
 
 ## More (open on demand)
 
+- `docs/organization-schema.md` — how this package is used across LLazyEmail (diagram + consumers).
 - `docs/architecture.md` — execution flows, every resolution order, error-site table, CLI reference, release pipeline.
 - `docs/recipes.md` — step-by-step changes: add flag / error code / config option / slug rule / fixture, release.
 - `README.md` — consumer-facing API and CLI. `MIGRATION.md` — sibling-repo migration tables.

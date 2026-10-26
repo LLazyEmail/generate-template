@@ -1,13 +1,14 @@
 # @llazyemail/generate-template
 
-Engine for turning **your** named email templates into HTML.
+Engine for turning **your** named email templates into HTML.  
 This package does not ship templates. You pass a catalog and render functions.
 
 Requires **Node.js >= 22.18**. Disk writes go through [`markup-generator`](https://github.com/LLazyEmail/markup-generator).
 
-Working on this repo with an AI agent? Start at [AGENTS.md](https://github.com/LLazyEmail/generate-template/blob/main/AGENTS.md).
+Working on this repo with an AI agent? Start at [AGENTS.md](AGENTS.md).  
+Want the organization-level picture? See [docs/organization-schema.md](docs/organization-schema.md).
 
-Current version: **1.6.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+Current version: **1.7.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
 
 `1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release.
 
@@ -21,11 +22,21 @@ Installs need a `read:packages` token. See `.npmrc.example`.
 
 This is the **generation** layer. It owns catalog lookup, payload resolution, the `run`/`writeAll` contract, and disk writes.
 
+```mermaid
+flowchart LR
+  Consumer["Your templates + render functions"] --> Gen["@llazyemail/generate-template<br/>createGenerator + run/writeAll"]
+  Gen --> Markup["markup-generator"]
+  Gen -.-> Runtime["optional: render-template / template-runtime-display"]
+  Markup --> HTML["generated HTML"]
+```
+
 - `@llazyemail/render-template` — low-level deterministic part/compose renderer (string parts only).
 - `@llazyemail/template-runtime-display` — email shell fragments + runtime that builds on `render-template`.
-- Consumer projects (e.g. `_playing_with_lit`) should inject their own `render` functions (Lit SSR, React, etc.) into `createGenerator` rather than reimplementing catalog, payload, or write logic locally.
+- Consumer projects (e.g. `postmark-transactional-template-simple`, `_playing_with_lit`) should inject their own `render` functions (Lit SSR, React, Postmark document, etc.) into `createGenerator` rather than reimplementing catalog, payload, or write logic locally.
 
 Local `BuildPipeline`-style classes that reimplement validation + render + write are duplication. Prefer a catalog entry whose `render` calls your existing renderer, then `generate.run({ templateId, payload })`.
+
+Full organization schema: [docs/organization-schema.md](docs/organization-schema.md).
 
 ## Public API
 
@@ -46,7 +57,7 @@ const html = await generate.render('welcome');
 const result = await generate.run({ templateId: 'welcome', payload: { name: 'Alex' } });
 ```
 
-`run(request)` is the contract a future HTTP handler wraps. Failures are `GenerateTemplateError` with `code`:
+`run(request)` is the contract a future HTTP handler wraps. Failures are `GenerateTemplateError` with `code`:  
 `UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG` | `CONFIG_NOT_FOUND` | `CONFIG_IMPORT_FAILED` | `CONFIG_INVALID`.
 
 `render` / `loadPayload` are async. File catalog entries need `allowFileTemplates: true` (prefer injected `render`).
