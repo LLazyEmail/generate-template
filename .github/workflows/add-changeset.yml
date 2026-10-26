@@ -1,0 +1,134 @@
+# Add a Changeset from the Actions UI (Option A)
+#
+# Run this when you want to release without creating a .changeset file locally.
+# It writes a changeset, commits it, and opens a pull request.
+# Merging that PR triggers the existing "Version packages" workflow, which
+# opens the Version Packages PR (bumps package.json, lockfile, CHANGELOG.md).
+# Merging the Version Packages PR creates the GitHub Release, which then
+# triggers npm-publish.yml.
+#
+# Usage:
+#   Actions → Add changeset → Run workflow
+#   - bump: patch | minor | major
+#   - summary: short description of the user-facing change
+#
+# Does not publish. Does not edit package.json itself.
+# That stays the job of changesets/action on the Version Packages PR.
+
+name: Add changeset
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Semver bump'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: minor
+      summary:
+        description: 'User-facing summary (one or more lines)'
+        required: true
+        type: string
+      branch_prefix:
+        description: 'Branch name prefix'
+        required: false
+        type: string
+        default: 'changeset'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: add-changeset
+  cancel-in-progress: false
+
+jobs:
+  add-changeset:
+    name: Create changeset PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Write changeset file
+        id: changeset
+        env:
+          BUMP: ${{ inputs.bump }}
+          SUMMARY: ${{ inputs.summary }}
+        run: |
+          set -euo pipefail
+          mkdir -p .changeset
+          id=$(date -u +%Y%m%d%H%M%S)-${BUMP}
+          file=".changeset/${id}.md"
+          {
+            echo "---"
+            echo "'@llazyemail/generate-template': ${BUMP}"
+            echo "---"
+            echo ""
+            printf '%s\n' "$SUMMARY"
+            echo ""
+          } > "$file"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "Wrote $file:"
+          cat "$file"
+
+      - name: Commit and open pull request
+        id: pr
+        env:
+          BUMP: ${{ inputs.bump }}
+          SUMMARY: ${{ inputs.summary }}
+          BRANCH_PREFIX: ${{ inputs.branch_prefix }}
+          FILE: ${{ steps.changeset.outputs.file }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="${BRANCH_PREFIX}/${BUMP}-$(date -u +%Y%m%d%H%M%S)"
+          git checkout -b "$branch"
+          git add "$FILE"
+          git commit -m "chore: add ${BUMP} changeset
+
+          ${SUMMARY}"
+          git push -u origin "$branch"
+
+          # Open the PR with gh (GITHUB_TOKEN is available)
+          pr_url=$(gh pr create \
+            --title "chore: add ${BUMP} changeset" \
+            --body "$(cat <<EOF
+          ## Changeset
+
+          This PR was opened by the **Add changeset** workflow so a release can be cut without running \`npx changeset\` locally.
+
+          - Bump: \`${BUMP}\`
+          - Summary:
+
+          ${SUMMARY}
+
+          ### Next steps (still on GitHub, nothing local)
+
+          1. Merge this PR.
+          2. The existing **Version packages** workflow will open a \"Version packages\" PR that bumps \`package.json\`, the lockfile, and \`CHANGELOG.md\`.
+          3. Merge that Version Packages PR. It creates the GitHub Release.
+          4. The **Publish to GitHub Packages** workflow then runs against the commit where the version already matches the release tag.
+
+          Do not create a GitHub Release by hand before the Version Packages PR is merged — the publish job reads the version from \`package.json\` on the tagged commit.
+          EOF
+          )" \
+            --base main \
+            --head "$branch")
+
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "Opened: $pr_url"
