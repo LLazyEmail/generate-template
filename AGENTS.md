@@ -53,8 +53,8 @@ This package is the generation layer used by LLazyEmail template repositories.
 | `src/bin.ts`, `src/bin-assert.ts` | Thin bin entries; no argv self-check                                                                                            |
 | `sandbox/`                        | Package-owned fixtures and live proof; never published                                                                          |
 | `tests/`                          | Unit contracts mirroring `src/`                                                                                                 |
-| `docs/`                           | On-demand agent docs (architecture, recipes, organization schema)                                                               |
-| `.changeset/`                     | Pending release notes                                                                                                           |
+| `docs/`                           | On-demand agent docs (architecture, recipes, organization schema, changesets)                                                   |
+| `.changeset/`                     | Pending release notes — see `docs/changesets.md`                                                                               |
 
 ## Contracts (must hold)
 
@@ -67,7 +67,7 @@ This package is the generation layer used by LLazyEmail template repositories.
 7. Failures are `GenerateTemplateError` with `code`: `UNKNOWN_TEMPLATE` | `NO_PAYLOAD` | `RENDER_FAILED` | `WRITE_FAILED` | `INVALID_CONFIG` | `CONFIG_NOT_FOUND` | `CONFIG_IMPORT_FAILED` | `CONFIG_INVALID`.
 8. Dates stay JSON-safe (`{ "__date": iso }` marker); revival happens only with `reviveDates: true`.
 9. Fixtures live in `sandbox/`, never in `src/`. `package.json` `files` is the publish allowlist; `tests/publish-files.test.ts` enforces it.
-10. Versions move via `npx changeset` — never hand-edit `package.json` version.
+10. Versions move via Changesets — never hand-edit `package.json` version or `CHANGELOG.md`, and never create a GitHub Release by hand. See [`docs/changesets.md`](docs/changesets.md).
 
 ## Task router
 
@@ -84,6 +84,7 @@ This package is the generation layer used by LLazyEmail template repositories.
 | Public exports                              | `src/index.ts`                  | + `tests/index.test.ts`            | `npx vitest run tests/index.test.ts`            |
 | Multi-file change                           | `docs/recipes.md`               | per recipe                         | per recipe                                      |
 | Organization / consumer integration         | `docs/organization-schema.md`   | docs only                          | —                                               |
+| Release / version bump                      | `docs/changesets.md`            | `.changeset/*.md` only             | —                                               |
 
 ## Do not
 
@@ -97,5 +98,6 @@ This package is the generation layer used by LLazyEmail template repositories.
 
 - `docs/organization-schema.md` — how this package is used across LLazyEmail (diagram + consumers).
 - `docs/architecture.md` — execution flows, every resolution order, error-site table, CLI reference, release pipeline.
+- `docs/changesets.md` — how versions are declared, bumped, tagged, and published.
 - `docs/recipes.md` — step-by-step changes: add flag / error code / config option / slug rule / fixture, release.
 - `README.md` — consumer-facing API and CLI. `MIGRATION.md` — sibling-repo migration tables.

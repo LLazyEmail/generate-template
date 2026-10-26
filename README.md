@@ -106,4 +106,4 @@ npm run sandbox
 npx changeset
 ```
 
-Versions are bumped by Changesets. Add a changeset for user-facing changes. Merging the Version Packages pull request updates `CHANGELOG.md`; publishing still happens when a GitHub Release is published.
+Versions are bumped by Changesets. Add a changeset for user-facing changes (locally with `npx changeset`, or from **Actions → Add changeset**). Merging the Version Packages pull request updates `package.json` and `CHANGELOG.md` and creates the GitHub Release; publishing then happens automatically. Full flow: [docs/changesets.md](docs/changesets.md).
