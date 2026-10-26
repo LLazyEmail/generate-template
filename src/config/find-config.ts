@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-export const CONFIG_CANDIDATES = [
+const CONFIG_CANDIDATES = [
   'generate-template.config.js',
   'generate-template.config.mjs',
   'generate-template.config.cjs',

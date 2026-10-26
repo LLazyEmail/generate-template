@@ -1,7 +1,7 @@
 import type { TemplateGenerator } from '../engine';
 import { GenerateTemplateError } from '../engine/errors';
 
-export function isTemplateGenerator(value: unknown): value is TemplateGenerator {
+function isTemplateGenerator(value: unknown): value is TemplateGenerator {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<TemplateGenerator>;
   return (

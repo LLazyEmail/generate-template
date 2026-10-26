@@ -63,7 +63,7 @@ export class Writer {
   }
 }
 
-export function wrapWriteError(error: unknown, templateId?: string): GenerateTemplateError {
+function wrapWriteError(error: unknown, templateId?: string): GenerateTemplateError {
   if (error instanceof GenerateTemplateError) return error;
   if (error instanceof MarkupGeneratorError) {
     return new GenerateTemplateError('WRITE_FAILED', `${error.code}: ${error.message}`, templateId);

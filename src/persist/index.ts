@@ -1,1 +1,1 @@
-export { Writer, wrapWriteError } from './writer';
+export { Writer } from './writer';
