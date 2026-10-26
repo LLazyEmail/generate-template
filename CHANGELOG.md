@@ -1,5 +1,11 @@
 # @llazyemail/generate-template
 
+## 1.9.0
+
+### Minor Changes
+
+- d7e595f: publishing the 1.8.* version
+
 ## 1.7.1
 
 ### Patch Changes
