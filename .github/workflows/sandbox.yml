@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 1
 
       - name: Render sandbox through the shared action
-        uses: LLazyEmail/email-template-workflows@v2.1.0
+        uses: LLazyEmail/email-template-workflows@v2.3.0
         with:
           working-directory: .
           package-manager: npm
