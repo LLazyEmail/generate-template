@@ -180,7 +180,7 @@ jobs:
 
       - name: Create pull request
         if: steps.detect.outputs.skip != 'true' && inputs.dry_run != true
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.CASCADE_TOKEN }}
           path: consumer
