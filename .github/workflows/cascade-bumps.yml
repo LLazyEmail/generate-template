@@ -1,0 +1,209 @@
+# Cascade dependency bumps after a generate-template release
+#
+# Call this separately (Actions → Cascade dependency bumps → Run workflow)
+# after a successful publish, or any time you want to open update PRs
+# in LLazyEmail consumer repositories.
+#
+# Required secret:
+#   CASCADE_TOKEN — fine-grained PAT or GitHub App token with:
+#     - Contents: Read and write
+#     - Pull requests: Read and write
+#     on every consumer repository listed below (or the whole org).
+#
+# The default GITHUB_TOKEN cannot create branches or PRs in other repositories.
+#
+# Known consumers (override with the repos input if needed):
+#   - postmark-transactional-template-simple (exact pin)
+#   - _playing_with_lit (caret range)
+
+name: Cascade dependency bumps
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to bump to (e.g. 1.7.1)'
+        required: true
+        type: string
+      package:
+        description: 'Package name'
+        required: false
+        type: string
+        default: '@llazyemail/generate-template'
+      repos:
+        description: 'Comma-separated repos (owner/repo or just name). Empty = default list.'
+        required: false
+        type: string
+        default: ''
+      preserve_range:
+        description: 'Keep existing range prefix (^, ~, or exact). Default true.'
+        required: false
+        type: boolean
+        default: true
+      dry_run:
+        description: 'Show what would change; do not push or open PRs'
+        required: false
+        type: boolean
+        default: false
+
+  # Optional: call from another workflow after publish
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      package:
+        required: false
+        type: string
+        default: '@llazyemail/generate-template'
+      repos:
+        required: false
+        type: string
+        default: ''
+      preserve_range:
+        required: false
+        type: boolean
+        default: true
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      CASCADE_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-bumps-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve target repos
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - id: matrix
+        env:
+          INPUT_REPOS: ${{ inputs.repos }}
+        run: |
+          if [ -n "$INPUT_REPOS" ]; then
+            # Turn "repo1,repo2" or "owner/repo1,owner/repo2" into JSON array
+            echo "$INPUT_REPOS" | jq -R 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0)) | map(if contains("/") then . else "LLazyEmail/\(.)" end)' > matrix.json
+          else
+            cat > matrix.json <<'EOF'
+          ["LLazyEmail/postmark-transactional-template-simple","LLazyEmail/_playing_with_lit"]
+          EOF
+          fi
+          jq -c . matrix.json
+          echo "matrix=$(jq -c . matrix.json)" >> "$GITHUB_OUTPUT"
+
+  bump:
+    name: Bump ${{ matrix.repo }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.resolve.outputs.matrix) }}
+    steps:
+      - name: Checkout consumer
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.CASCADE_TOKEN }}
+          ref: main
+          path: consumer
+
+      - name: Detect package manager and current range
+        id: detect
+        working-directory: consumer
+        run: |
+          PKG="${{ inputs.package }}"
+          VERSION="${{ inputs.version }}"
+          PRESERVE="${{ inputs.preserve_range }}"
+
+          if [ ! -f package.json ]; then
+            echo "No package.json — skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CURRENT=$(jq -r --arg p "$PKG" '.dependencies[$p] // .devDependencies[$p] // empty' package.json)
+          if [ -z "$CURRENT" ]; then
+            echo "Package not present — skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+
+          if [ "$PRESERVE" = "true" ]; then
+            # Keep ^ or ~ if present; otherwise exact
+            if [[ "$CURRENT" == ^* ]]; then
+              NEW="^$VERSION"
+            elif [[ "$CURRENT" == ~* ]]; then
+              NEW="~$VERSION"
+            else
+              NEW="$VERSION"
+            fi
+          else
+            NEW="$VERSION"
+          fi
+
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Detected $PKG: $CURRENT → $NEW"
+
+      - name: Apply version bump
+        if: steps.detect.outputs.skip != 'true'
+        working-directory: consumer
+        run: |
+          PKG="${{ inputs.package }}"
+          NEW="${{ steps.detect.outputs.new }}"
+
+          # Update both dependencies and devDependencies (whichever exists)
+          jq --arg p "$PKG" --arg v "$NEW" '
+            if .dependencies[$p] then .dependencies[$p] = $v else . end |
+            if .devDependencies[$p] then .devDependencies[$p] = $v else . end
+          ' package.json > package.json.tmp && mv package.json.tmp package.json
+
+          # Refresh lockfile if npm is used
+          if [ -f package-lock.json ]; then
+            echo "Updating package-lock.json..."
+            npm install --package-lock-only --no-audit --no-fund --ignore-scripts || true
+          fi
+
+          git diff --stat || true
+
+      - name: Create pull request
+        if: steps.detect.outputs.skip != 'true' && inputs.dry_run != true
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.CASCADE_TOKEN }}
+          path: consumer
+          commit-message: "chore: bump ${{ inputs.package }} to ${{ inputs.version }}"
+          title: "chore: bump ${{ inputs.package }} to ${{ inputs.version }}"
+          body: |
+            Automated cascade bump from the generate-template release workflow.
+
+            - Package: `${{ inputs.package }}`
+            - Previous: `${{ steps.detect.outputs.current }}`
+            - New: `${{ steps.detect.outputs.new }}`
+            - Source: [LLazyEmail/generate-template](https://github.com/LLazyEmail/generate-template)
+
+            Please review CI, especially generate/assert scripts and any exact pins.
+          branch: chore/bump-generate-template-${{ inputs.version }}
+          base: main
+          delete-branch: true
+          labels: dependencies
+          signoff: false
+
+      - name: Dry-run summary
+        if: steps.detect.outputs.skip != 'true' && inputs.dry_run == true
+        run: |
+          echo "### Dry run — ${{ matrix.repo }}"
+          echo "Would change \`${{ inputs.package }}\` from \`${{ steps.detect.outputs.current }}\` to \`${{ steps.detect.outputs.new }}\`"
+          echo "No branch or PR created."
