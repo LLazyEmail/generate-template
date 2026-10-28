@@ -15,9 +15,13 @@ permissions:
 
 jobs:
   test:
-    name: Typecheck, lint, build, coverage
+    name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24, 26]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -25,7 +29,8 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version: ${{ matrix.node }}
+          cache: npm
 
       - name: Install
         run: npm ci --no-audit --no-fund
