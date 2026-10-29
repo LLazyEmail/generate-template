@@ -99,3 +99,14 @@ This package is the generation layer used by LLazyEmail template repositories.
 - `docs/architecture.md` — execution flows, every resolution order, error-site table, CLI reference, release pipeline.
 - `docs/recipes.md` — step-by-step changes: add flag / error code / config option / slug rule / fixture, release.
 - `README.md` — consumer-facing API and CLI. `MIGRATION.md` — sibling-repo migration tables.
+
+## Conventions
+
+- Small, single-purpose PRs; open them as **draft** first.
+- Commit trailer when working for the maintainer:
+  `Co-authored-by: petroved <arthur.tkachenko.netweight@gmail.com>`
+- Node: `engines.node` is `>=22.18.0`. CI runs on Node 22, 24, and 26.
+- Keep TypeScript `strict` on. Prefer raising coverage over lowering thresholds in `vitest.config.ts`.
+- Release: Changesets (`.github/workflows/changesets.yml` / `npm-publish.yml`) to GitHub Packages.
+- Docs: extend or annotate; do not delete existing docs content. Longer flows live under `docs/`.
+
