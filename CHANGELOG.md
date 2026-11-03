@@ -1,5 +1,11 @@
 # @llazyemail/generate-template
 
+## 1.9.1
+
+### Patch Changes
+
+- 6cfbd9d: Bump `markup-generator` to ^4.1.0.
+
 ## 1.9.0
 
 ### Minor Changes
