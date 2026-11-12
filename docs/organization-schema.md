@@ -19,14 +19,22 @@ Related packages (do not reimplement their responsibilities):
 | `@llazyemail/render-template` | Low-level deterministic part/compose renderer (string parts only) |
 | `@llazyemail/template-runtime-display` | Email shell fragments + runtime that builds on `render-template` |
 | `markup-generator` | File writing primitives (`writeGeneratedFile`, `writeGeneratedEmail`, etc.) |
+| `generate-template-server` | Thin HTTP surface that wraps `run()` (preview, zip download, online editor) |
 
 ## Organization usage diagram
 
 ```mermaid
 flowchart TB
+  subgraph Surfaces["Surfaces (thin adapters)"]
+    CLI["CLI bin<br/>generate-template"]
+    Workflows["email-template-workflows<br/>GitHub Action (v3)"]
+    Server["generate-template-server<br/>HTTP / zip / preview"]
+    Editor["Future online editor<br/>(browser client)"]
+  end
+
   subgraph Consumers["Consuming repositories"]
-    Postmark["postmark-transactional-template-simple<br/>(pins 1.6.1)<br/>generate-template.config.ts<br/>+ createProjectGenerator()"]
-    Playing[" _playing_with_lit<br/>(^1.5.0)<br/>createLitGenerator()<br/>from templateRegistry"]
+    Postmark["postmark-transactional-template-simple"]
+    Playing["_playing_with_lit"]
     Future["Future template repos"]
   end
 
@@ -34,32 +42,32 @@ flowchart TB
     Factory["createGenerator(config)"]
     Engine["TemplateGenerator<br/>find / slug / loadPayload / render / run / writeAll"]
     Persist["Writer → markup-generator"]
-    CLI["CLI bin<br/>generate-template<br/>(loads config, --all / --template)"]
     Factory --> Engine
     Engine --> Persist
-    CLI --> Factory
   end
 
   subgraph Rendering["Rendering layers (injected, not owned here)"]
     Runtime["@llazyemail/template-runtime-display<br/>+ @llazyemail/render-template"]
-    Local["Consumer-local renderers<br/>(Lit SSR adapter, Postmark document, etc.)"]
+    Local["Consumer-local renderers"]
   end
 
-  subgraph Disk["Disk / CI"]
-    HTML["generated/*.html"]
-    Workflows["email-template-workflows<br/>GitHub Action (optional)"]
+  subgraph Disk["Outputs"]
+    HTML["generated/*.html or in-memory / zip"]
   end
 
-  Postmark -->|"catalog + render functions<br/>+ samplePayloads"| Factory
-  Playing -->|"catalog of registered renderers"| Factory
+  Postmark -->|"catalog + render"| Factory
+  Playing -->|"catalog + render"| Factory
   Future -->|"catalog + render"| Factory
+
+  CLI --> Factory
+  Workflows -->|"npx generate-template --all"| CLI
+  Server -->|"generate.run()"| Engine
+  Editor -->|"HTTP"| Server
 
   Engine -->|"entry.render(payload)"| Local
   Local -.->|"may call"| Runtime
-
   Persist --> HTML
-  CLI --> HTML
-  Workflows -->|"npx generate-template --all"| CLI
+  Server --> HTML
 ```
 
 ## Concrete consumers
@@ -80,10 +88,19 @@ flowchart TB
 - Preferred path: `createLitGenerator()` then `generate.run({ templateId, payload, write })`.
 - Local `BuildPipeline`-style classes that reimplement catalog + payload + write are considered duplication.
 
-### 3. Other / future
+### 3. `generate-template-server` (callable HTTP surface)
+
+- Thin Node HTTP server that calls `createGenerator` + `generate.run()`.
+- Endpoints: `POST /render`, `POST /render-many` (returns zip), `GET /templates`, `GET /health`.
+- Intended for the online editor (preview + “hit download” zip flow) and any other non-CLI caller.
+- Does **not** own catalog or rendering logic — it only packages the existing contract for HTTP.
+- Repo: [LLazyEmail/generate-template-server](https://github.com/LLazyEmail/generate-template-server)
+
+### 4. Other / future
 
 - Any new template repository should follow the same pattern: supply a catalog of `ids` + `render` (and optional sample payloads), then call `createGenerator` + `run` / `writeAll`.
-- The GitHub Action in `email-template-workflows` can invoke the CLI (`npx generate-template --all --out=generated`) in any consumer.
+- The GitHub Action in `email-template-workflows` (v3, “Render Static Artifacts”) can invoke the CLI (`npx generate-template --all --out=generated`) in any consumer.
+- The online editor should be a client of `generate-template-server`, not a reimplementation of generation.
 
 ## Typical consumer integration pattern
 
@@ -141,6 +158,7 @@ const result = await generate.run({
 4. Lookup is case-insensitive over all `ids`; slug = first id, trailing `Email` stripped, camelCase → kebab-case.
 5. Failures are `GenerateTemplateError` with a stable `code`.
 6. Prefer injected `render` functions over file templates (`allowFileTemplates` is opt-in).
+7. Surfaces (CLI, CI Action, HTTP server, browser) are thin adapters over `run()`. Do not duplicate generation logic in them.
 
 ## Where to go next
 
@@ -151,7 +169,8 @@ const result = await generate.run({
 | Migrate a sibling repo | `MIGRATION.md` |
 | See a live proof | `sandbox/` + `npm run sandbox` |
 | Consumer-facing API | `README.md` |
+| Callable HTTP server | [generate-template-server](https://github.com/LLazyEmail/generate-template-server) |
 
 ---
 
-*Last updated for the organization schema. Keep this file in sync when a new major consumer appears or the package boundaries change.*
+*Last updated to include the callable server surface. Keep this file in sync when a new major consumer or surface appears.*
