@@ -86,6 +86,15 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
+      - name: Check CASCADE_TOKEN is configured
+        env:
+          CASCADE_TOKEN: ${{ secrets.CASCADE_TOKEN }}
+        run: |
+          if [ -z "$CASCADE_TOKEN" ]; then
+            echo "::error title=CASCADE_TOKEN is not set::Add a CASCADE_TOKEN repository or organization secret (fine-grained PAT or GitHub App token with Contents and Pull requests write on each consumer). See docs/cascade-bumps.md."
+            exit 1
+          fi
+
       - id: matrix
         env:
           INPUT_REPOS: ${{ inputs.repos }}
