@@ -8,7 +8,7 @@ Requires **Node.js >= 22.18**. Disk writes go through [`markup-generator`](https
 Working on this repo with an AI agent? Start at [AGENTS.md](AGENTS.md).  
 Want the organization-level picture? See [docs/organization-schema.md](docs/organization-schema.md).
 
-Current version: **1.7.1**. Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template).
+[![Latest release](https://img.shields.io/github/v/release/LLazyEmail/generate-template)](https://github.com/LLazyEmail/generate-template/releases/latest) Published on [GitHub Packages](https://github.com/LLazyEmail/generate-template/pkgs/npm/generate-template). The current version is the one in [`package.json`](package.json) and at the top of [CHANGELOG.md](CHANGELOG.md); this README does not repeat it, so it cannot go stale.
 
 `1.0.1` is the release Postmark depends on. `0.2.0` was an unpublished markup-generator branch, not a release.
 
@@ -107,3 +107,7 @@ npx changeset
 ```
 
 Versions are bumped by Changesets. Add a changeset for user-facing changes. Merging the Version Packages pull request updates `CHANGELOG.md`; publishing still happens when a GitHub Release is published.
+
+## Cascade bumps to consumers (not wired yet)
+
+`.github/workflows/cascade-bumps.yml` can open "bump generate-template" pull requests in consumer repositories (`postmark-transactional-template-simple`, `_playing_with_lit`). It is manual (`workflow_dispatch` / `workflow_call`) and **needs a `CASCADE_TOKEN` secret, which is not configured** in this repository or the LLazyEmail organization today, so it has never run and no release workflow calls it. Without the secret the workflow now stops in its first job with a clear error. Setup and the token's permissions are in [docs/cascade-bumps.md](docs/cascade-bumps.md). Until a maintainer adds the token, consumers pick up new versions through their own Renovate or Dependabot.

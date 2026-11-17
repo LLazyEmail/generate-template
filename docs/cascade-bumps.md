@@ -2,10 +2,12 @@
 
 After `@llazyemail/generate-template` is published to GitHub Packages you can open update pull requests in the other LLazyEmail repositories with one workflow.
 
+> **Status (November 2026): not wired.** The `CASCADE_TOKEN` secret does not exist in this repository or at the LLazyEmail organization level, the workflow has never run, and neither `changesets.yml` nor `npm-publish.yml` calls it. A maintainer has to create the token (see [Required secret](#required-secret)); it cannot be faked or replaced by `GITHUB_TOKEN`. Until then the workflow fails fast in the **Resolve target repos** job with `CASCADE_TOKEN is not set`, and consumers get updates from their own Renovate or Dependabot. The sibling repo email-template-workflows removed its cascade for that reason in [#53](https://github.com/LLazyEmail/email-template-workflows/pull/53); removing this one is a reasonable alternative to adding the token.
+
 ## How to run
 
 1. Go to **Actions → Cascade dependency bumps → Run workflow**.
-2. Enter the version that was just published (e.g. `1.7.1`).
+2. Enter the version that was just published (the `version` in `package.json`, e.g. `1.9.1`).
 3. Leave `repos` empty to use the default list, or override it.
 4. Check `dry_run` first if you want to preview the changes.
 
